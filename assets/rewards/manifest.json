@@ -1,0 +1,5 @@
+[
+  { "id": "meadow-cottage", "name": "雲の上の小さな家", "src": "cottage.png", "alt": "白い雲に囲まれた、緑の草原の小さな家" },
+  { "id": "sleepy-fox", "name": "ひだまりの昼寝", "src": "fox.png", "alt": "白い花の咲く草原で、丸くなって眠るキツネ" },
+  { "id": "little-greenhouse", "name": "朝の秘密の温室", "src": "greenhouse.png", "alt": "草原にたたずむ、花と緑に囲まれたガラスの温室" }
+]

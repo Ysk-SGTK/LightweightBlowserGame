@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#182e31">
+  <meta name="description" content="宝石の紋章をそろえる、数分の小さな神経衰弱。スマホ・PCで気軽に遊べます。">
+  <title>紋章あわせ — 小さな神経衰弱</title>
+  <link rel="icon" href="./assets/reward.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <main class="game-shell">
+    <header><h1>紋章あわせ</h1><p>2枚めくって、同じ紋章を見つけよう。</p></header>
+    <dl class="stats" aria-label="プレイ状況">
+      <div><dt>経過時間</dt><dd id="elapsed">0:00</dd></div>
+      <div><dt>めくった回数</dt><dd id="flips">0<span> 回</span></dd></div>
+      <div><dt>そろったペア</dt><dd id="pairs">0<span> / 8</span></dd></div>
+    </dl>
+    <div id="board" class="board" aria-label="4行4列のカード盤面"></div>
+    <p id="status" class="status" role="status" aria-live="polite">好きなカードから、どうぞ。</p>
+    <button id="restart" class="restart" type="button">最初から遊ぶ <span aria-hidden="true">↻</span></button>
+    <footer>約1〜3分の、小さなひと休み。<br><small>利用状況（開始・クリア・再プレイ）を匿名で記録します。<br>Cookieや永続的なユーザーIDは使用しません。</small></footer>
+  </main>
+  <dialog id="clear-dialog" aria-labelledby="clear-title">
+    <div class="clear-content">
+      <p class="clear-word">CLEAR</p><h2 id="clear-title">すべての紋章が、そろいました。</h2>
+      <p id="clear-stats"></p>
+      <div class="reward"><img id="reward-image" alt="クリアの贈り物、宝石の紋章" width="240" height="240"><p id="reward-fallback" hidden>8ペア完成、おめでとう！</p></div>
+      <p class="reward-caption">あなたへ、小さな贈り物。</p>
+      <button id="play-again" class="restart" type="button">もう一度遊ぶ <span aria-hidden="true">↻</span></button>
+      <button id="view-board" class="text-button" type="button">そろったカードを見る</button>
+    </div>
+  </dialog>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f3f7f3">
+  <meta name="description" content="2分で遊べる小さなマインスイーパー。クリアして、ひとつの宝ものを見つけよう。">
+  <title>ちいさな宝さがし | FIELD NOTES</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23264235'/%3E%3Ctext x='16' y='24' text-anchor='middle' font-size='24' fill='white'%3E✦%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/src/app.js"></script>
+</head>
+<body>
+  <main class="game-shell">
+    <header class="brand"><span><i class="brand-mark" aria-hidden="true"><b></b><b></b><b></b><b></b></i> FIELD NOTES</span><span>01</span></header>
+    <section class="intro"><h1>ちいさな宝さがし</h1><p>ひと息ついて、宝ものを見つけよう。</p></section>
+    <div class="stats" aria-label="ゲームの状況">
+      <div><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg><span id="timer" aria-label="残り時間">02:00</span></div>
+      <div><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 21V3l14 2-2 5-12-1"/></svg><span id="flags" aria-label="置ける旗の数"></span></div>
+      <div><i class="brand-mark small" aria-hidden="true"><b></b><b></b><b></b><b></b></i><span id="progress" aria-label="開いた安全なマス"></span></div>
+    </div>
+    <div id="board" class="board" role="group" aria-label="地雷フィールド"></div>
+    <div class="mode-switch" role="group" aria-label="タップの操作">
+      <button id="open-mode" type="button" aria-pressed="true">開く</button>
+      <button id="flag-mode" type="button" aria-pressed="false">旗を置く</button>
+    </div>
+    <p id="status" class="status" role="status">最初のタップは安全です。</p>
+    <ol class="instructions"><li>数字は、まわり8マスにある地雷の数。</li><li>地雷だと思うマスには、旗を置こう。</li></ol>
+    <button id="restart" class="button outline" type="button">もう一度遊ぶ<span aria-hidden="true">↻</span></button>
+    <p class="footnote">地雷<span id="rule-mines"></span>個・制限時間<span id="rule-seconds"></span>分<br>安全な<span id="rule-safe"></span>マスを開くと、1枚の宝ものが届きます。</p>
+    <p class="privacy-note">本サイトでは利用状況の確認のため、ページ閲覧数やゲームの開始・終了などの匿名の利用情報を収集しています。個人を特定する目的では利用しません。</p>
+    <noscript>このゲームにはJavaScriptが必要です。</noscript>
+  </main>
+  <dialog id="reward-dialog" aria-labelledby="reward-heading">
+    <div class="reward-content"><span class="reward-spark" aria-hidden="true">✦</span><h2 id="reward-heading">宝もの、見つけた。</h2><p>クリアおめでとう！今回の1枚はこちら。</p><div class="reward-frame"><img id="reward-image" alt=""><p id="image-error" hidden>画像を読み込めませんでした。<br>もう一度遊んで、新しい宝ものを探そう。</p></div><h3 id="reward-name"></h3><p id="clear-time" class="clear-time"></p><button id="reward-restart" class="button primary" type="button">もう一度遊ぶ<span aria-hidden="true">↻</span></button><button id="close-reward" class="text-button" type="button">盤面を見る</button></div>
+  </dialog>
+</body>
+</html>

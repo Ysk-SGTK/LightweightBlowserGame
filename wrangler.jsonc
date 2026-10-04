@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "browser-game-lab",
+  "pages_build_output_dir": "./dist",
+  "compatibility_date": "2026-10-04",
+  "send_metrics": false,
+  "d1_databases": [{
+    "binding": "GAME_LOG_DB",
+    "database_name": "browser-game-lab-events",
+    // Local placeholder: replace before connecting production Pages.
+    "database_id": "00000000-0000-0000-0000-000000000000",
+    "migrations_dir": "migrations"
+  }],
+  // Preview deployments fail logging safely until given a separate preview DB.
+  "env": { "preview": { "d1_databases": [] } }
+}
