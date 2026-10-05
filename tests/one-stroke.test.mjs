@@ -40,7 +40,7 @@ test('solver reports unsolvable and search budget separately; malformed witness 
  assert.throws(()=>validatePuzzle(puzzles[0],[0]));
 });
 test('one-stroke common D1 events deduplicate, link actual plays, reject private fields',async()=>{
- const db=new DatabaseSync(':memory:');for(const f of ['0001_events.sql','0002_memory_events.sql','0003_game_events.sql','0004_one_stroke.sql','0005_color_blocks.sql'])db.exec(readFileSync(new URL('../migrations/'+f,import.meta.url),'utf8'));
+ const db=new DatabaseSync(':memory:');for(const f of ['0001_events.sql','0002_memory_events.sql','0003_game_events.sql','0004_one_stroke.sql','0005_color_blocks.sql','0006_number_tap.sql'])db.exec(readFileSync(new URL('../migrations/'+f,import.meta.url),'utf8'));
  const env={GAME_LOG_DB:{prepare:sql=>({bind:(...args)=>({run:async()=>db.prepare(sql).run(...args)})})}};
  const sent=[],a=createStrokeAnalytics({send:e=>sent.push(e)}),p=puzzles[0];
  a.pageView(p);a.pageView(p);a.start(p);a.start(p);a.clear(p,{elapsed_seconds:2,move_count:p.playable_cells-1,undo_count:0,reset_count:0});a.clear(p,{});

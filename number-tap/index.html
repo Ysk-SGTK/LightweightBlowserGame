@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>数字順押し・タイムアタック — Browser Game Lab</title><meta name="description" content="1から順番に数字をタップ。すぐに遊べる3難易度のタイムアタック。"><link rel="icon" href="data:,"><link rel="stylesheet" href="./styles.css"><script type="module" src="./app.js"></script></head>
+<body><main><a class="back" href="/">← ゲーム一覧</a><header><span class="eyebrow">BROWSER GAME LAB / 05</span><h1>数字順押し<span>タイムアタック</span></h1><p>1 → 2 → 3 → … 順番にタップ。</p></header>
+<div class="toolbar"><label>難易度 <select id="difficulty"><option>Easy</option><option selected>Normal</option><option>Hard</option></select></label><button id="restart">リスタート</button></div>
+<section class="stats" aria-label="プレイ状況"><div>次は<strong id="next" aria-live="polite">1</strong></div><div>TIME <small>秒</small><strong id="time">0.0</strong></div><div>MISS<strong id="miss">0</strong></div></section>
+<p id="hint" class="hint" role="status">スタートを押すと、数字が表示されます</p>
+<div id="board-wrap" class="board-wrap ready"><div id="board" aria-label="数字盤面" aria-hidden="true" inert></div><button id="start" class="start-cover"><strong>START</strong><span>タップ / クリックでスタート</span></button></div>
+<section id="result" hidden tabindex="-1" aria-label="プレイ結果"><h2>CLEAR</h2><p id="summary"></p><button id="retry">もう一度遊ぶ</button><figure><img id="reward" alt="" width="400" height="160"><figcaption id="caption"></figcaption></figure></section>
+<footer>開始・終了などの匿名の利用情報を収集しています。氏名やメール、IP・永続ユーザーIDはゲームのログに保存しません。</footer></main></body></html>

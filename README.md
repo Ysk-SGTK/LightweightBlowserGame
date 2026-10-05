@@ -413,3 +413,54 @@ Hard以上10問すべてについて、正解経路の途中で別の合法な�
 - 公開ブラウザのpage_view / game_start / retry計3件は全てHTTP 204、本番D1の全送信項目と保存値を照合PASS。検証イベントは実利用者の反応として扱わない。
 - 初回D1読取はCloudflare API 7403。既存OAuthのwhoami / D1一覧 / Pages一覧を再確認して同じ対象への再実行PASS、原因は未確定。初回Pushは環境変数側のGitHub認証で403、子プロセスだけGITHUB_TOKENを除外して既存保存済み認証でPush成功。永続のcredential・権限変更なし。公開確認初回はPagesの反映前で旧3リンクを検出してFAIL、build完了後の再確認PASS。
 - 証拠: visualizationsのcolor-blocks-home-local-qa.json / color-blocks-home-public-qa.json / color-blocks-home-local.png / color-blocks-home-public.png / color-blocks-public-mobile.png。本番D1照合データとSQLバックアップはGit対象外 `.wrangler/`。実スマホ・他ブラウザ・人間の初見難易度／所要時間は未確認。
+
+## 数字順押し・タイムアタック MVP（2026-10-05）
+
+5本目 `/number-tap/` を追加。既存のHTML / CSS / ES Modules、共通匿名送信 `src/analytics.js`、Pages Functions / D1、一覧ページとproduction build方式を再利用。共通エンジン化・永続ベスト・ランキングなどは追加なし。モデル／推論設定はこのチャットの設定を維持し、小規模で既存方式を再利用するためサブエージェント不使用。
+
+想定公開URL: https://lightweight-browser-games.pages.dev/number-tap/ 。ローカル: http://127.0.0.1:4173/number-tap/ 。今回の停止条件は「公開可能な状態」。commit / push / deploy / remote migrationは実施しない。
+
+| 難易度 | 盤面 | 数字 |
+| --- | --- | --- |
+| Easy | 4×4 | 1〜16 |
+| Normal（初期選択） | 5×5 | 1〜25 |
+| Hard | 6×6 | 1〜36 |
+
+1から順番にクリック／タップ。正しい数字だけ即時進行、押し済みボタンは無効化し連打を二重処理しない。誤タップは進行せずMISSを加算、ゲームオーバーなし。開始前は盤面を隠し操作を無効にする。STARTのタップ／クリックで数字を表示して開始する。Fisher-Yatesシャッフルで欠番・重複なし。retry／restart／難易度変更で再生成し、同じ配置になった場合は1マス巡回して必ず変える。
+
+`performance.now()`でSTARTのタップ／クリックから計測し、最後の数字の押下時刻で固定。表示／ログは0.1秒単位、表示更新50ms。retryで0へ戻り旧intervalを解除。正解90msのハイライトから薄い押し済み表示、誤タップ140msの色変化と小さな揺れ、CLEAR280ms。入力を止めない。reduced-motion時は演出なし。結果は難易度・秒数・MISS・即retryと仮報酬画像。報酬は `number-tap/assets/reward.svg` の差し替え、または `number-tap/config.js` のREWARD設定で変更できる。
+
+ログ: game_id=`number-tap`、page_view / game_start / game_clear / retry。page_viewはロードにつき1回、startはSTART操作で1プレイ1回、clearは最終数字で1回。start等の共通固有値はdifficulty / board_width / board_height / max_number、clearにはelapsed_seconds / miss_countを追加。session_idはページメモリのみ、play_idは実開始時に発行。retryは元playを指し、未開始retryを挟んでも次の実開始が直前の実開始へprevious_play_idで連鎖。難易度変更も盤面のやり直しとしてretryを記録するが、startは記録しない。
+
+共通送信の4秒timeout・再送なし・credentials omit・ゲーム非同期分離を維持。Cookie / LocalStorage / sessionStorage / fingerprint / 永続IDを追加しない。個人情報・IP・User-Agent等の余分なpayloadはAPI allowlistで拒否。`0006_number_tap.sql` はmax_number / miss_countの2列を追加するのみで、元データ・一意indexを保持。既存elapsed_seconds列はSQLiteの非STRICT INTEGER affinityのため0.1秒値を保存可能であり、実SQLiteとローカルD1双方で小数の保持を照合。
+
+作成: `number-tap/` のindex.html・app.js・game.js・config.js・analytics.js・events.js・styles.css・assets/reward.svg、migrations/0006_number_tap.sql、tests/number-tap.test.mjs。変更: index.html、scripts/build.mjs（events.jsは配信除外）、worker/index.js、package.json、README.md、既存5テストのmigration fixture。既存4ゲームのゲームコード・ルールは変更なし。
+
+| 必須検証・コマンド | 実測結果 |
+| --- | --- |
+| `npm test` | PASS 40/40。全4ゲームの回帰、新ゲーム1500盤面の完全置換・retry配置変更、誤タップ・100回重複操作・最終停止・小数時刻、4ゲーム履歴保持、D1重複排除・ID連鎖・個人情報拒否・送信例外分離 |
+| `npm run check` | PASS、既存／追加JS構文 |
+| `npm run build` | PASS、5ゲームを含むproduction静的成果物 |
+| `npm run deploy:check` | PASS、Pages Functionsローカルコンパイル。公開操作なし |
+| `npm start`（build→db:local→Pages dev） | PASS、ローカル0006適用、127.0.0.1:4173、bindingはlocal |
+| 実Chrome / Playwright、PC1280×900・touch viewport390×844・320×760 | PASS、各幅でEasy／Normal／Hard、トップから5ゲームへ遷移、既存4ゲームの表示／横はみ出しなし、新ゲーム直接route／reload、意味のある画面・エラーoverlayなし・通常console error/warning 0 |
+| 新ゲーム実画面操作 | PASS、待機中0.0・最初の1で開始・誤タップ不進行・押し済み100連打・残り数字の高速二重操作・9回CLEAR・報酬ロード・停止時刻固定・即retry・配置変更・実行中restart後再開始でもinterval最大1 |
+| 演出／狭幅実測 | PASS、正解0.09s・誤タップ0.14s・CLEAR0.28s、reduced-motionでanimation none。320pxセルEasy70px／Normal55.19px／Hard45.33px、数字24px、全幅で横スクロールなし。390pxのHard53.16px、PCのHard69.83px |
+| ローカルD1照合 | PASS、最終QA新ゲーム78件（clear9件）をevent_idで全送信項目と照合。sessionごとpage_view1回・playごとstart/clear1回、P1→P2→…が一致。検証イベントは実利用者の反応ではない |
+| ログAPIを意図的にHTTP503へ置換 | PASS、320px touch操作でNormal CLEAR・retry。通常の成功通信と分離して検証 |
+| 誤タップ直後に同じ数字を正しく押す | PASS、wrong classを除去しdone class／正解90msに切替、次の数字へ即進行 |
+| `git diff --check` | PASS |
+
+初回失敗・対処: buildを含む二コマンドの並行実行でEBUSY、逐次実行へ修正しPASS。sandboxの親ディレクトリ読取制限でPages Functions compile失敗、承認された実行環境で同じローカルコマンドを再実行PASS。QAの既存ゲーム戻りリンクlocatorが形式違いでtimeout、ブラウザの戻る操作へ直してPASS。全UI確認後の応答callback総数とrequest総数に差があり初回の総数assertはFAIL。新ゲーム78件はすべてD1に保存済みでゲームの配送失敗は検出されず、callbackの総数を保存証明として扱わずevent_idによる全項目D1照合で検証。未観測callbackの原因は未確定。ゲームコードの問題とは断定しない。
+
+証拠: `C:/Users/Yusuke/.codex/visualizations/2026/10/05/01a10bae-4405-7ca2-8dba-a4a32dfce06d/` のnumber-tap-qa.mjs、number-tap-browser-qa.json、number-tap-d1-verification.json、number-tap-feedback-qa.json、各幅／難易度PNG、number-tap-clear.png。D1読取データはGit対象外 `.wrangler/number-tap-d1.json`。Browserプラグインが利用不可のため既存のPlaywright／Chromeで検証。スクリーンショットを実際に確認し、数字の可読性・余白・結果／報酬表示を確認。
+
+未確認／公開前の人間確認: 実スマホ、Safari／Firefox、人間の初見プレイ所要時間（希望の30秒〜2分は未実測）、タップ感、仮報酬画像、匿名ログ保管期間。今回の対象URLの本番反映・本番D1保存は未確認。公開する際は対象Pages projectとD1を確認し、本番0006適用を先に行ってからpush／deployし、公開URLと本番ログを確認する。これらの外部書込みは具体的対象への明示承認が必要。ローカル公開準備完了で停止し、追加改善は行わない。
+
+### スタート前の盤面非表示への変更（2026-10-05）
+
+ユーザーの追加指示により、盤面全体にSTART画面を重ね、数字はvisibility hidden・inert・aria-hiddenで視覚／キーボード／支援技術から隠す。初期HTMLもready状態で、JS初期化前の数字表示を防ぐ。STARTのタップ／クリックで数字を表示し、その時刻からタイマーとgame_startを開始する（元仕様の最初の1からの計測を置換）。開始前の数字操作はロジックでも無視。START連打で二重開始なし。retry／restart／難易度変更は数字を隠しTIME0に戻す。
+
+変更対象: number-tap/app.js・game.js・index.html・styles.css、tests/number-tap.test.mjs、README.md。共通API／migration変更なし。
+
+検証: npm test 40/40 PASS、npm run check PASS、npm run build PASS。時刻テストを強化後のnode --test tests/number-tap.test.mjs 4/4 PASS。Chrome / PlaywrightでPC1280px・mobile390px・320px × Easy／Normal／Hardの9条件PASS。開始前非表示・数字の強制click無視・TIME0・START時の表示・1を押す前から計測・START30連打でもログ1回・全数字CLEAR後停止・retryで再非表示・横はみ出しなし・page error0を確認。画像を目視確認。証拠は前記visualizations配下のnumber-tap-start-cover-qa.json／.mjs、number-tap-start-cover.png、number-tap-start-revealed.png。今回の追加検証では本番・実スマホ・D1全項目再照合を実施せず、送信イベント内のstartとclearは各9件。commit／push／deployなし。
