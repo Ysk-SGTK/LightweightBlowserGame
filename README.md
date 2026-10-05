@@ -400,3 +400,16 @@ Hard以上10問すべてについて、正解経路の途中で別の合法な�
 証拠は `C:/Users/Yusuke/.codex/visualizations/2026/10/05/01a10b8b-8b38-7553-809b-9608e5d8a48f/` のcolor-blocks-browser-qa.json、color-blocks-qa.mjs、color-blocks-verify.mjs、color-blocks-desktop.png、color-blocks-mobile.png、color-blocks-clear.png。D1読取結果はGit対象外 `.wrangler/color-blocks-d1.json`。Browserプラグインは利用不可のため、利用可能なPlaywright/Chromeで確認。
 
 公開前の人間確認: 色・タップしやすさ、3難易度の初見難易度と所要時間、仮報酬画像、匿名ログ保管期間を確認。実スマホ・Safari等の他ブラウザは未確認。`0005_color_blocks.sql` の本番D1適用と既存Pagesへの公開内容について明示承認後、対象DB確認→本番migration→公開反映→公開URLと本番保存確認が必要。今回はcommit・push・deploy・remote migrationを行っていない。公開に向けたローカル必須検証を完了したため、追加改善せず終了。
+
+## 色ブロック消しパズルの公開反映（2026-10-05）
+
+- ユーザーの明示指示でトップページを修正し、4本目のゲーム一式をmainへPush。トップは4本のリンクを維持し、「同じ色が2個以上つながったらタップ」「3難易度で目標スコア」を案内。
+- コードcommit: `24c3dee19c12ba2e699943cc9e984c45ae259571`、origin/mainへのPush: PASS。別途この結果文書も同じmainへPushする。
+- ユーザーが本番D1への6列追加を明示承認。実在する対象DBのID一致、実名lightweightblowsergame、未適用migrationは0005だけと確認。Git対象外 `.wrangler/color-blocks-before-publication.sql` にバックアップを取得して `npx wrangler d1 migrations apply GAME_LOG_DB --remote` を実行、0005適用PASS。
+- migration前後と公開確認後の本番D1を照合し、既存96行の全元列を保持: PASS。既存行の削除なし。
+- 公開Pages projectはlightweight-browser-games、Production / main。commit 24c3deeのdeployment `a2971df0-b416-48a8-ac9a-cbf11a8adcd2` から反映。公開URL: https://lightweight-browser-games.pages.dev/ 、ゲームURL: https://lightweight-browser-games.pages.dev/color-blocks/ 。
+- 最終 `npm test`: 36/36 PASS、`npm run build`: PASS、`git diff --check`: PASS。ゲームロジックはMVP検証時から変更なし。
+- ローカルと公開URLのChrome / Playwright: PC1280×900とスマホ幅390×844、4リンク・案内・新ゲームへの遷移・120ブロック・有効消去の得点更新・restart・横はみ出しなし・page errorなし: PASS。公開トップ／app.js／game.js／styles.cssはproduction buildと一致（Windows/CIの改行差のみ正規化）。
+- 公開ブラウザのpage_view / game_start / retry計3件は全てHTTP 204、本番D1の全送信項目と保存値を照合PASS。検証イベントは実利用者の反応として扱わない。
+- 初回D1読取はCloudflare API 7403。既存OAuthのwhoami / D1一覧 / Pages一覧を再確認して同じ対象への再実行PASS、原因は未確定。初回Pushは環境変数側のGitHub認証で403、子プロセスだけGITHUB_TOKENを除外して既存保存済み認証でPush成功。永続のcredential・権限変更なし。公開確認初回はPagesの反映前で旧3リンクを検出してFAIL、build完了後の再確認PASS。
+- 証拠: visualizationsのcolor-blocks-home-local-qa.json / color-blocks-home-public-qa.json / color-blocks-home-local.png / color-blocks-home-public.png / color-blocks-public-mobile.png。本番D1照合データとSQLバックアップはGit対象外 `.wrangler/`。実スマホ・他ブラウザ・人間の初見難易度／所要時間は未確認。
