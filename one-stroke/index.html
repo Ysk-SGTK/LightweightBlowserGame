@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>一筆の旅 — Browser Game Lab</title><link rel="icon" href="data:,"><link rel="stylesheet" href="./styles.css"></head>
+<body><main><a class="back" href="/">← ゲーム一覧</a><header><p class="eyebrow">BROWSER GAME LAB · 03</p><h1>一筆の旅</h1><p>すべてのマスを、一度ずつ。<br>STARTから線をつないで、最後にGOALへ。</p></header>
+<section class="panel" aria-label="一筆書きパズル"><div class="selectors"><label>難易度 <select id="difficulty"><option>Easy</option><option>Normal</option><option>Hard</option><option>Expert</option><option>Challenge</option></select></label><label>問題 <select id="puzzle"></select></label></div>
+<div class="stats"><div>踏破数<strong id="coverage">0 / 0</strong></div><div>経過時間<strong id="elapsed">0:00</strong></div><div>盤面<strong id="size"></strong></div></div>
+<div class="viewport" id="viewport"><div id="board" role="group" aria-label="パズル盤面"></div></div>
+<div class="legend"><span>● START</span><span>◎ GOAL</span><span>■ 通過済み</span></div>
+<p id="status" role="status">STARTから始めよう。</p><div class="controls"><button id="undo">1手戻る</button><button id="reset">最初から</button><button id="next">次の問題 →</button></div>
+<label class="zoom"><input type="checkbox" id="zoom"> 盤面を拡大（大きな盤面向け）</label><label class="zoom"><input type="checkbox" id="pan" disabled> 移動モード（拡大した盤面をスワイプ）</label><p class="help">押したまま上下左右につなぐか、1マスずつタップ。直前のマスへ戻ると1手取り消し。拡大時は移動モードで盤面をスワイプ。線を描くときは移動モードを解除してください。</p></section>
+<footer>ゲームの開始・クリアなど、匿名の利用情報を記録します。Cookieやブラウザへの保存は行いません。</footer></main>
+<dialog id="clear-dialog"><p class="eyebrow">ALL TILES CONNECTED</p><h2>CLEAR!</h2><p id="clear-stats"></p><img id="reward" alt="クリアのごほうび" width="240" height="180"><p id="reward-fallback" hidden>すべてのマスがつながりました。</p><div class="controls"><button id="again">もう一度遊ぶ</button><button id="clear-next">次の問題へ →</button><button id="close">盤面を見る</button></div></dialog>
+<script type="module" src="./app.js"></script></body></html>

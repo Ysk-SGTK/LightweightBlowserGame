@@ -17,7 +17,8 @@ async function clearFiles(directory) {
 }
 await clearFiles(dist);
 // Explicit asset allowlist: no DB files, tests, docs, server, or dependencies.
-for (const item of ['index.html', 'styles.css', 'src', 'assets', 'minesweeper', 'memory']) await cp(resolve(root, item), resolve(dist, item), { recursive: true });
+for (const item of ['index.html', 'styles.css', 'src', 'assets', 'minesweeper', 'memory', 'one-stroke']) await cp(resolve(root, item), resolve(dist, item), { recursive: true });
 await rm(resolve(dist, 'memory', 'README.md'), { force: true });
+await rm(resolve(dist, 'one-stroke', 'events.js'), { force: true });
 await cp(resolve(root, 'public'), dist, { recursive: true });
 console.log('Static assets built in dist/');

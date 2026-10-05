@@ -66,6 +66,7 @@ test('real SQLite migration stores memory stats, deduplicates and rejects extra 
   db.exec(readFileSync(new URL('../migrations/0001_events.sql',import.meta.url),'utf8'));
   db.exec(readFileSync(new URL('../migrations/0002_memory_events.sql',import.meta.url),'utf8'));
   db.exec(readFileSync(new URL('../migrations/0003_game_events.sql',import.meta.url),'utf8'));
+  db.exec(readFileSync(new URL('../migrations/0004_one_stroke.sql',import.meta.url),'utf8'));
   const env={GAME_LOG_DB:{prepare:sql=>({bind:(...args)=>({run:async()=>db.prepare(sql).run(...args)})})}};
   const events=[],a=createMemoryAnalytics('botanical',{send:e=>events.push(e)});
   a.pageView();a.start();a.clear({elapsed_seconds:45,flip_count:22,mismatch_count:3,pairs_matched:8});

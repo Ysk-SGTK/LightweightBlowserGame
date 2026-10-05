@@ -6,11 +6,13 @@
   "scripts": {
     "start": "npm run build && npm run db:local && wrangler pages dev dist --ip 127.0.0.1 --port 4173",
     "test": "node --test tests/*.test.mjs",
-    "check": "node --check src/app.js && node --check src/game.js && node --check src/analytics.js && node --check worker/index.js && node --check scripts/build.mjs && node --check memory/app.js && node --check memory/cards.js && node --check memory/game.js && node --check memory/analytics.js && node --check functions/api/events.js",
+    "check": "node --check src/app.js && node --check src/game.js && node --check src/analytics.js && node --check worker/index.js && node --check scripts/build.mjs && node --check memory/app.js && node --check memory/cards.js && node --check memory/game.js && node --check memory/analytics.js && node --check functions/api/events.js && node --check one-stroke/app.js && node --check one-stroke/game.js && node --check one-stroke/analytics.js && node --check one-stroke/events.js && node --check scripts/one-stroke-solver.mjs",
     "build": "node scripts/build.mjs",
     "db:local": "wrangler d1 migrations apply GAME_LOG_DB --local",
     "analyze:local": "wrangler d1 execute GAME_LOG_DB --local --file analysis/summary.sql",
-    "deploy:check": "npm run build && wrangler pages functions build --outdir .wrangler/pages-check"
+    "deploy:check": "npm run build && wrangler pages functions build --outdir .wrangler/pages-check",
+    "puzzles:generate": "node scripts/generate-one-stroke.mjs",
+    "puzzles:verify": "node scripts/verify-one-stroke.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.146.0"
