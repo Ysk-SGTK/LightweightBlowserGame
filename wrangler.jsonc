@@ -7,8 +7,8 @@
   "d1_databases": [{
     "binding": "GAME_LOG_DB",
     "database_name": "browser-game-lab-events",
-    // Local placeholder: replace before connecting production Pages.
-    "database_id": "00000000-0000-0000-0000-000000000000",
+    // Database ID supplied by the owner; remote migration is a separate step.
+    "database_id": "9d4b7505-3f13-45db-96f8-82a46b752a5d",
     "migrations_dir": "migrations"
   }],
   // Preview deployments fail logging safely until given a separate preview DB.

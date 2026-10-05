@@ -54,7 +54,7 @@ wrangler.jsonc             # Pages / D1設定
 
 | 項目 | 値 |
 | --- | --- |
-| Repository | `browser-game-lab`（Public） |
+| Repository | `Ysk-SGTK/LightweightBlowserGame`（Public） |
 | Production branch | `main` |
 | Framework preset | None |
 | Root directory | 空欄（リポジトリルート） |
@@ -71,17 +71,17 @@ Cloudflare Freeプランの範囲で始める構成です。無料枠は無制�
 
 ## Cloudflare Dashboardでの公開手順
 
-**Git連携より先に本番D1 IDを設定してください。現在のIDはローカル専用の仮IDです。** 初回連携からbuild/deployが走るため、この順序を守ります。
+**所有者から提供されたD1 IDを設定済みです。対象DB・アカウントの確認とremote migrationは未実施です。** 初回Git連携からbuild/deployが走るため、先にmigrationを適用してください。
 
 1. Cloudflare Dashboard → Storage & databases → D1 → Create database。名前を `browser-game-lab-events` としてDBを作成し、Database IDをコピーします。CLIなら `npx wrangler d1 create browser-game-lab-events` でも作成できます。
-2. `wrangler.jsonc` の `d1_databases[0].database_id` を本番IDへ置換します。IDは認証Tokenではありません。binding名は `GAME_LOG_DB` のままにします。
+2. `wrangler.jsonc` の `d1_databases[0].database_id` は所有者指定の `9d4b7505-3f13-45db-96f8-82a46b752a5d` を設定済みです。DashboardのDB IDとの一致を確認し、DB名が異なる場合は `database_name` を実際の名前へ合わせます。IDは認証Tokenではありません。binding名は `GAME_LOG_DB` のままにします。
 3. 対象アカウントの認証が必要なら `npx wrangler login`。migrationを本番へ適用します（本番への書き込み）。
    ```powershell
    npx wrangler d1 migrations apply GAME_LOG_DB --remote
    ```
    0001→0002→0003が順に適用されます。0003が共通 `game_events` を作成し、旧匿名テーブルがあればデータを投影します。旧表は削除しません。
 4. IDを設定した差分をcommitして `main` へpushします。
-5. Workers & Pages → Create application → Pages → Connect to Git。GitHubに接続し、対象の `browser-game-lab` リポジトリを選択。新しいWorkers作成画面ではなくPagesのGit連携を選びます。
+5. Workers & Pages → Create application → Pages → Connect to Git。GitHubに接続し、対象の `Ysk-SGTK/LightweightBlowserGame` リポジトリを選択。新しいWorkers作成画面ではなくPagesのGit連携を選びます。
 6. 前表のRoot directory / Build command / Build output / main / NODE_VERSIONを設定してSave and Deploy。
 7. Pages projectのSettings → Bindings（画面によってFunctions内）でD1の `GAME_LOG_DB` が `browser-game-lab-events` を指すことを確認します。**この構成ではwrangler.jsoncがbindingの正本**です。設定ファイルを使うとDashboardで同じ項目を編集できない場合があります。その場合はwranglerのID修正→pushで更新し、Dashboardで一致を確認してください。
 8. migration / bindingの修正後は最新deploymentをRetry deployment / Redeploy。公開URLでトップ→両ゲーム→reload、開始・結果・retryが本番D1へ保存されることを確認します。
@@ -153,24 +153,15 @@ GROUP BY game_id,session_id;
 
 マインスイーパー: `assets/rewards/manifest.json` のid / name / src / altを編集。同フォルダの画像を差し替えます。神経衰弱: [memory/README.md](memory/README.md) を参照。変更後はbuild・reload。
 
-## GitHub準備
+## GitHub
 
-機密ファイル・DB・build成果物・依存・検証録画はcommit対象外。秘密情報を見つけた場合はpushしないでください。リポジトリを作成できなかった場合の手順:
+公開先: [Ysk-SGTK/LightweightBlowserGame](https://github.com/Ysk-SGTK/LightweightBlowserGame)。既存リポジトリが空であることを確認し、所有者指定のpush先として使用します。
 
-```powershell
-gh auth login --hostname github.com
-# mainの初回commitがある状態で:
-gh repo create browser-game-lab --public --source . --remote origin --push
-```
-
-今回の実行ではGitHub CLIの認証は確認できましたが、createRepositoryが `Resource not accessible by personal access token` で拒否されました。ローカルmainの初回commitまで完了し、リポジトリ作成・pushは未実施です。認証の環境変数がある場合はCLI loginより優先されるため、人間が適切なアカウント・権限を確認してください。手動ならGitHubのNew repositoryで `browser-game-lab` / Publicを選び、README・LICENSE・gitignoreを追加せず空のリポジトリを作成します。その後、GitHubに表示されたHTTPS URLを使います:
+機密ファイル・DB・build成果物・依存・検証録画はcommit対象外。CloudflareのTokenをGitへ記載しないでください。
 
 ```powershell
-git remote add origin https://github.com/Ysk-SGTK/browser-game-lab.git
 git push -u origin main
 ```
-
-同名の既存リポジトリがある場合は上書きせず、対象を確認してください。公開URL・アカウント認証は人間が確認し、CloudflareのTokenをファイル・GitHubへ記載しないでください。
 
 ## 公開準備の実測結果（2026-10-05）
 
@@ -184,4 +175,4 @@ git push -u origin main
 - ログAPIを503にした両ゲームで開始・再プレイが動作。Cookie / LocalStorage / SessionStorageへの保存なし、正常操作時のconsole error / warningなし。
 - 公開対象とbuild成果物を確認し、機密情報・不要な個人情報・ローカル絶対パスの検出なし。新規Gitのため既存履歴なし。
 
-ローカルD1の数字はテストデータで、実利用者の反応ではありません。スマホ実機、Cloudflare本番build・binding・本番D1保存・公開URLは未確認です。本番公開には、上記手順でD1作成、仮ID置換、remote migration、Pages Git連携と再deployが必要です。
+ローカルD1の数字はテストデータで、実利用者の反応ではありません。スマホ実機、Cloudflare本番build・binding・本番D1保存・公開URLは未確認です。本番公開には、指定D1の確認、remote migration、Pages Git連携と再deployが必要です。D1 IDは所有者提供値を設定済みで、DBの存在・アクセス権は未確認です。
