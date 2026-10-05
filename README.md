@@ -30,6 +30,8 @@ npm run analyze:local
 | `/` | 簡単なゲーム一覧 |
 | `/minesweeper/` | 10×10・地雷12個・制限2分のマインスイーパー |
 | `/memory/` | 4×4・8ペアの神経衰弱 |
+| `/one-stroke/` | 5難易度・20問の一筆書き |
+| `/color-blocks/` | 10×12・3難易度の色ブロック消しパズル |
 | `POST /api/events` | 共通匿名イベント受信API |
 
 ```text
@@ -39,9 +41,10 @@ src/                       # 既存マインスイーパーのJS・共通送信
 styles.css                 # マインスイーパーCSS
 assets/rewards/            # マインスイーパーの報酬とmanifest
 memory/                    # 神経衰弱のHTML / JS / CSS / SVG
+color-blocks/              # 色ブロック消しの画面・ロジック・設定・報酬
 functions/api/events.js    # Pages Function
 worker/index.js            # API validation / prepared statement保存
-migrations/                # D1 migration（0001〜0003を順に適用）
+migrations/                # D1 migration（0001〜0005を順に適用）
 analysis/summary.sql        # game別集計とID連鎖
 public/                    # _routes.json / 404.html
 scripts/build.mjs           # 静的成果物をdistへ生成
@@ -355,3 +358,45 @@ Hard以上10問すべてについて、正解経路の途中で別の合法な�
 - push初回は環境変数側のGitHub認証で403。子プロセスのみ環境変数を除外し、既存の同一アカウントの保存済み認証でpush成功。永続の認証・権限設定は変更なし。
 - 公開確認スクリプト初回はreset後の古い座標によるclear待ちtimeout、次は画像ロード前の判定でFAIL。reset後の座標取得と画像ロード待ちを直して再実行PASS。ゲームソース変更なし。
 - 証拠: visualizationsのpublication-browser-qa.json / publication-d1-verification.json / public-mobile.png。SQLバックアップとD1照合データはGit対象外の .wrangler/。実スマホ・他ブラウザ・人間の初見難易度は未確認。
+
+## 色ブロック消しパズル MVP・実測結果（2026-10-05）
+
+4本目のゲーム `/color-blocks/` を追加。既存のHTML / CSS / ES Modules・共通送信 `src/analytics.js`・Pages Functions / D1を利用。共通エンジン化なし。想定公開先は既存Pagesの https://lightweight-browser-games.pages.dev/color-blocks/ 。今回の公開反映は未実施。
+
+ルール: 上下左右でつながる同色2個以上をクリック／タップすると消去。斜め・孤立1個は対象外。消去→重力で下へ→空列を左へ詰める→次の手を判定。消せなくなった時点で、目標以上ならCLEAR、未達ならGAME OVER。目標到達だけで途中終了しない。点数は `group_size²`、最大同時消去数を表示。特殊ブロック・コンボ・永続進行などは追加しない。
+
+| 難易度 | 盤面 | 色数 | 目標スコア |
+| --- | --- | --- | --- |
+| Easy | 10×12 | 4 | 240 |
+| Normal | 10×12 | 5 | 320 |
+| Hard | 10×12 | 6 | 400 |
+
+調整箇所: `color-blocks/config.js` のBOARD_WIDTH / BOARD_HEIGHT / COLOR_COUNT / DIFFICULTIES / scoreGroup。開始盤面は色ごとの個数差1以内のシャッフル後に消去可能性を検証し、最大100回まで再生成。難易度でルールは変えない。所要時間の希望（30秒〜4分）は人間の初見プレイで未検証であり、自動操作時間から推定しない。Hardの高い目標と6色は初期値。
+
+演出: 消去150msの縮小・フェード、移動200msの落下・左詰め。大きいグループは軽いハイライト、小さい加点ポップアップ。ブロックIDを保持して実DOMの座標を移動。演出中は入力ロック、リスタート／難易度変更時は古い非同期処理を無効化。reduced-motionでは演出を短縮。6色それぞれにシンボルを付加。CLEAR報酬は `color-blocks/assets/reward.svg`、差替設定はconfig.jsのREWARD。
+
+ログ: game_id=color-blocks、page_view / game_start / game_clear / game_over / retry。session_idはページメモリのみ。最初の有効消去でplay_idを発行し、次の実開始をprevious_play_idで接続。retryは元playを指す。startにはdifficulty / board_width / board_height / color_count / target_score、終局にはさらにfinal_score / elapsed_seconds / total_blocks_removed / largest_group_removed / move_count / remaining_blocks。終了は1回のみ。共通送信は4秒timeout・再送なし・credentials omit、ゲームは送信結果を待たない。APIは厳格allowlist、共通一意index・prepared statementを維持。Cookie・LocalStorage・永続ID・氏名・メール・IP・User-Agent全文等を追加保存しない。既存analysis/summary.sqlはgame_idで新ゲームも集計する。
+
+変更ファイル: color-blocks/内のindex.html・app.js・game.js・config.js・analytics.js・events.js・styles.css・assets/reward.svg、migrations/0005_color_blocks.sql、tests/color-blocks.test.mjs。既存変更はトップindex.html、scripts/build.mjs、worker/index.js、package.json、README.md、4テストのDB fixtureへ0005を追加。0005は6列の追加のみで既存データ・一意indexを維持。buildは新ゲームをコピーし、サーバー専用events.jsを静的配信から除く。
+
+| 実行・確認 | 結果 |
+| --- | --- |
+| `npm ci --cache .wrangler/npm-cache --no-audit --no-fund --fetch-retries=0 --fetch-timeout=20000` | PASS、lockfileどおり37パッケージinstall |
+| `npm test` | PASS、36/36。探索・単独/斜め除外・消去・重力・列詰め・得点・終局・時刻固定・D1履歴維持・重複排除・ID連鎖・余分な個人情報拒否・送信例外分離。1,500初期盤面と終局までの消去整合性、既存3ゲームも通過 |
+| `npm run check` | PASS、既存と新ゲームのJS構文 |
+| `npm run build` | PASS、production静的成果物生成 |
+| `npm run deploy:check` | PASS、ローカルPages Functionsコンパイル。公開操作を含まない |
+| `npm run db:local` | PASS、ローカル0005適用。remote未操作 |
+| Chrome 154.0.8037.92 / Playwright、PC 1280×900 | PASS、トップから遷移・タイトル/内容・reload・孤立ブロック拒否・連打30回で1手分のみ加点・演出中リスタート・結果/報酬・retry、既存3ゲーム表示 |
+| PC Easy→Normal→Hard終局 | PASS、Easy CLEAR 547点/30手、Normal CLEAR 380点/36手、Hard GAME OVER 250点/33手。盤面はseed固定の実UI操作、ルールの差替なし |
+| モバイル390×844 / touch emulation | PASS、タップでEasy CLEAR 578点/25手・retry。盤面の1セル約34.59px、横幅390px内に収まる。320×760も横はみ出しなし |
+| アニメーション / reduced-motion | PASS、computed styleの消去150ms・移動200ms、移動後DOM座標と盤面座標一致、reduced-motion時transition 0s |
+| ローカルログ | PASS、今回の新ゲーム送信成功18件はHTTP 204、D1保存値を全項目照合。一部確認用再生を含み、実利用者の反応ではない |
+| ログ失敗時 | PASS、APIを意図的にHTTP 503へ置換した2件は保存されず、タップと得点更新を継続。ブラウザの503 resource診断2件・匿名送信失敗warningは期待どおり |
+| `git diff --check` | PASS |
+
+初回失敗と解決: 既定npmキャッシュへのアクセスはEPERM、プロジェクト内のGit対象外キャッシュで再実行PASS。sandbox内のPages Functionsコンパイルは親ディレクトリ読取制限でFAIL、同じローカル検証を承認された実行環境で再実行PASS。Wranglerのlog書込先もプロジェクト内の `.wrangler/logs` に指定。ブラウザQA初回の最終assertは意図した503 resource診断2件を通常errorに含めてFAIL。全実操作は完了しており、ゲームソースを変更せず、期待診断のみ分けて再評価し、D1照合・reload・演出・狭幅追加確認とともにPASS。想定外のページ実行errorは0件。
+
+証拠は `C:/Users/Yusuke/.codex/visualizations/2026/10/05/01a10b8b-8b38-7553-809b-9608e5d8a48f/` のcolor-blocks-browser-qa.json、color-blocks-qa.mjs、color-blocks-verify.mjs、color-blocks-desktop.png、color-blocks-mobile.png、color-blocks-clear.png。D1読取結果はGit対象外 `.wrangler/color-blocks-d1.json`。Browserプラグインは利用不可のため、利用可能なPlaywright/Chromeで確認。
+
+公開前の人間確認: 色・タップしやすさ、3難易度の初見難易度と所要時間、仮報酬画像、匿名ログ保管期間を確認。実スマホ・Safari等の他ブラウザは未確認。`0005_color_blocks.sql` の本番D1適用と既存Pagesへの公開内容について明示承認後、対象DB確認→本番migration→公開反映→公開URLと本番保存確認が必要。今回はcommit・push・deploy・remote migrationを行っていない。公開に向けたローカル必須検証を完了したため、追加改善せず終了。

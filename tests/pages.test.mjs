@@ -9,7 +9,7 @@ import { RULES } from '../src/game.js';
 
 function fixture(){
   const db=new DatabaseSync(':memory:');
-  for(const file of ['0001_events.sql','0002_memory_events.sql','0003_game_events.sql','0004_one_stroke.sql'])db.exec(readFileSync(new URL('../migrations/'+file,import.meta.url),'utf8'));
+  for(const file of ['0001_events.sql','0002_memory_events.sql','0003_game_events.sql','0004_one_stroke.sql','0005_color_blocks.sql'])db.exec(readFileSync(new URL('../migrations/'+file,import.meta.url),'utf8'));
   const env={GAME_LOG_DB:{prepare:sql=>({bind:(...args)=>({run:async()=>db.prepare(sql).run(...args)})})}};
   const events=[],options={send:e=>events.push(e)};
   const mines=createAnalytics(RULES,options),memory=createMemoryAnalytics('gem',options);

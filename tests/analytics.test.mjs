@@ -13,7 +13,7 @@ function recorder() {
 }
 function database() {
   const db = new DatabaseSync(':memory:');
-  for (const migration of ['0001_events.sql','0002_memory_events.sql','0003_game_events.sql','0004_one_stroke.sql']) db.exec(readFileSync(new URL('../migrations/' + migration, import.meta.url),'utf8'));
+  for (const migration of ['0001_events.sql','0002_memory_events.sql','0003_game_events.sql','0004_one_stroke.sql','0005_color_blocks.sql']) db.exec(readFileSync(new URL('../migrations/' + migration, import.meta.url),'utf8'));
   const env = { GAME_LOG_DB: { prepare: sql => ({ bind: (...args) => ({ run: async () => db.prepare(sql).run(...args) }) }) } };
   return { db, env };
 }

@@ -1,5 +1,6 @@
 import { RULES } from '../src/game.js';
 import { validStrokeEvent } from '../one-stroke/events.js';
+import { validBlockEvent } from '../color-blocks/events.js';
 
 const COMMON = ['game_id', 'event_id', 'event_seq', 'event_name', 'timestamp', 'session_id', 'play_id', 'previous_play_id', 'board_width', 'board_height', 'mine_count'];
 const STATS = ['elapsed_seconds', 'opened_cells', 'flags_used'];
@@ -29,6 +30,7 @@ export function validMemoryEvent(event) {
 
 export function validEvent(event) {
   if (!event || typeof event !== 'object' || Array.isArray(event)) return false;
+  if (event.game_id === 'color-blocks') return validBlockEvent(event);
   if (event.game_id === 'one-stroke') return validStrokeEvent(event);
   if (event.game_id === 'memory') return validMemoryEvent(event);
   if (event.game_id !== 'minesweeper') return false;
@@ -83,7 +85,7 @@ export async function ingest(request, env) {
   if (!validEvent(event)) return new Response(null, { status: 400, headers });
   try {
     // Store only explicit anonymous columns. Never read/log IP or User-Agent.
-    const columns = ['game_id','event_seq','event_name','timestamp','session_id','play_id','previous_play_id','board_width','board_height','mine_count','card_theme','elapsed_seconds','opened_cells','flags_used','flip_count','mismatch_count','pairs_matched','puzzle_id','difficulty','width','height','playable_cells','move_count','undo_count','reset_count'];
+    const columns = ['game_id','event_seq','event_name','timestamp','session_id','play_id','previous_play_id','board_width','board_height','mine_count','card_theme','elapsed_seconds','opened_cells','flags_used','flip_count','mismatch_count','pairs_matched','puzzle_id','difficulty','width','height','playable_cells','move_count','undo_count','reset_count','color_count','target_score','final_score','total_blocks_removed','largest_group_removed','remaining_blocks'];
     await env.GAME_LOG_DB.prepare(`INSERT INTO game_events
       (id,${columns.join(',')}) VALUES (${Array(columns.length+1).fill('?').join(',')}) ON CONFLICT DO NOTHING`)
       .bind(event.event_id, ...columns.map(key => event[key] ?? null)).run();

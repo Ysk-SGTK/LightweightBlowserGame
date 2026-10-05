@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>色ブロック消しパズル — Browser Game Lab</title><meta name="description" content="つながった同じ色をタップ。数分だけ遊べる色ブロック消しパズル。"><link rel="icon" href="data:,"><link rel="stylesheet" href="./styles.css"><script type="module" src="./app.js"></script></head>
+<body><main><a class="back" href="/">← ゲーム一覧</a><header><span class="eyebrow">BROWSER GAME LAB / 04</span><h1>色ブロック消しパズル</h1><p>つながった同じ色を、まとめてポン。</p></header>
+<div class="toolbar"><label>難易度 <select id="difficulty"><option>Easy</option><option selected>Normal</option><option>Hard</option></select></label><button id="restart">リスタート</button></div>
+<section class="stats" aria-label="プレイ状況"><div>スコア<strong id="score">0</strong></div><div>目標<strong id="target">320</strong></div><div>時間<strong id="time">0:00</strong></div><div>最大消去<strong id="largest">0</strong></div></section>
+<div class="progress"><div id="progress"></div></div><p class="hint" id="hint" role="status">上下左右で2個以上つながった色をタップ</p>
+<div class="board-wrap"><div id="board" aria-label="色ブロック盤面" aria-busy="false"></div><span id="popup" aria-hidden="true"></span></div>
+<p class="rules">大きくまとめるほど高得点。消せなくなったら終了。<br>目標スコアに届いていれば CLEAR！</p>
+<section id="result" hidden aria-label="プレイ結果" tabindex="-1"><h2 id="outcome"></h2><dl id="summary"></dl><figure id="reward" hidden><img alt="" width="400" height="180"><figcaption></figcaption></figure><button id="retry">もう一度遊ぶ</button></section>
+<footer>開始・終了などの匿名の利用情報を収集しています。氏名やメール、IP・永続ユーザーIDはゲームのログに保存しません。</footer></main></body></html>
