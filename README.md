@@ -464,3 +464,17 @@ Hard以上10問すべてについて、正解経路の途中で別の合法な�
 変更対象: number-tap/app.js・game.js・index.html・styles.css、tests/number-tap.test.mjs、README.md。共通API／migration変更なし。
 
 検証: npm test 40/40 PASS、npm run check PASS、npm run build PASS。時刻テストを強化後のnode --test tests/number-tap.test.mjs 4/4 PASS。Chrome / PlaywrightでPC1280px・mobile390px・320px × Easy／Normal／Hardの9条件PASS。開始前非表示・数字の強制click無視・TIME0・START時の表示・1を押す前から計測・START30連打でもログ1回・全数字CLEAR後停止・retryで再非表示・横はみ出しなし・page error0を確認。画像を目視確認。証拠は前記visualizations配下のnumber-tap-start-cover-qa.json／.mjs、number-tap-start-cover.png、number-tap-start-revealed.png。今回の追加検証では本番・実スマホ・D1全項目再照合を実施せず、送信イベント内のstartとclearは各9件。commit／push／deployなし。
+
+## 数字順押しの公開反映（2026-10-05）
+
+- ユーザーの「GitにPushして公開して」を受け、ゲーム本体・START画面・匿名ログ・トップ5リンク・migration・テスト・結果文書をmainへcommit／push。コードcommit: `e2781903c02c339e882f8350bb0239ffcad8a48d`、Push PASS。既存origin/mainと同期しており衝突なし。
+- 既存Pages project `lightweight-browser-games`、Production / main、コードdeployment `2433b411-8c6c-475c-bb16-d6097520a620`。公開URL: https://lightweight-browser-games.pages.dev/number-tap/ 、トップ: https://lightweight-browser-games.pages.dev/ 。Git連携による公開を確認し、重複するCLI deployは行わない。
+- D1一覧で対象Database IDの一致と実名 `lightweightblowsergame` を確認、未適用は0006のみ。`npx wrangler d1 migrations apply GAME_LOG_DB --remote` PASS、max_number／miss_countの2列追加。前後の元列定義と既存ゲーム件数は一致（color-blocks3／memory6／minesweeper5／one-stroke85、計99行）。個別の既存行の全値照合は実施しない。
+- 本番D1全件export・全既存ログ取得は、自動承認レビューが公開承認の範囲を超えるデータ取得と判断して拒否したため未実施。代替としてスキーマ／migration／ゲーム別件数だけを取得し、今回の公開QA12イベントのみID指定で読み取った。credential／権限変更なし。
+- 公開Chrome / Playwright、PC1280px Normal・320pxタッチHardでPASS。5リンク、数字非表示→STARTで表示／1を押す前から計測、START30連打で開始1回、誤タップ不進行、最後でCLEAR／停止・報酬ロード、retryで非表示とTIME0、次プレイのID連鎖、横はみ出しなし、console error／warning 0。
+- 公開root／number-tapのHTML・app.js・game.js・styles.cssをproduction buildと比較して一致（Windows／CIの改行差のみ正規化）。既存4ゲームURLはHTTP200でゲームHTMLを返す。
+- 正常QAの12件はHTTP204、本番D1の保存値をevent_idで全送信項目と照合PASS。start／clearは1プレイ1回、previous_play_id一致。新ゲーム16行のうち4行は初回QAが画像ロード待ち不足で停止するまでの検証イベント。実利用者の反応と扱わない。既存4ゲーム件数99行は公開確認後も一致。
+- 初回Pushは環境変数側のGitHub認証で403、子プロセスだけGITHUB_TOKENを除外して既存保存済み認証でPush成功。初回公開QAは画像ロード完了前にassertしてFAIL、検証側のロード待ちのみ修正してPASS。D1照合初回はread処理がCLI完了前に走って空JSON、次に--file実行がSELECT行を返さずメタ情報だけで照合FAIL。同じID限定SELECTを--commandで実行し、完了後に照合してPASS。ゲームソースを変更せず解決。
+- 最終ソースはローカル40/40 tests、構文・production build・Pages Function compile通過済み。公開時にゲームソースの追加改善なし。
+- 証拠: 前記visualizations配下のnumber-tap-public-qa.json／.mjs、number-tap-public-d1-verification.json、number-tap-public-mobile.png。Git対象外 `.wrangler/` にスキーマ／件数・今回の検証イベント照合結果。実スマホ・他ブラウザ・人間の初見所要時間は未確認。
+- この公開結果文書もmainへcommit／pushして作業を終了する。
