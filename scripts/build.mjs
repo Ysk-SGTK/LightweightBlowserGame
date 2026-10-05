@@ -17,7 +17,7 @@ async function clearFiles(directory) {
 }
 await clearFiles(dist);
 // Explicit asset allowlist: no DB files, tests, docs, server, or dependencies.
-for (const item of ['index.html', 'styles.css', 'src', 'assets', 'minesweeper', 'memory', 'one-stroke', 'color-blocks', 'number-tap']) await cp(resolve(root, item), resolve(dist, item), { recursive: true });
+for (const item of ['index.html', 'styles.css', 'src', 'assets', 'minesweeper', 'memory', 'one-stroke', 'color-blocks', 'number-tap', 'drum-smash']) await cp(resolve(root, item), resolve(dist, item), { recursive: true });
 await rm(resolve(dist, 'memory', 'README.md'), { force: true });
 await rm(resolve(dist, 'one-stroke', 'events.js'), { force: true });
 await rm(resolve(dist, 'color-blocks', 'events.js'), { force: true });
