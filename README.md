@@ -347,4 +347,11 @@ Hard以上10問すべてについて、正解経路の途中で別の合法な�
 - ユーザーの明示指示により、トップページの `/one-stroke/` リンクを含むゲーム追加・問題更新を `main` へpushして既存Git連携Pagesに公開する。
 - Wranglerで実在するPages projectは `lightweight-browser-games`、production branchは `main` と確認。公開先は https://lightweight-browser-games.pages.dev/one-stroke/ 。従来のREADMEのURL記載を実際の公開先に修正。
 - 本番D1は指定IDと一致、実名 `lightweightblowsergame`。remote SQL exportをGit対象外の `.wrangler/` に取得後、`0004_one_stroke.sql` を適用: PASS。適用後、既存9行と0001〜0004のmigration履歴を確認。
-- 公開後の実ブラウザ・匿名ログ保存の確認結果は後記する。
+- ゲーム公開commit `d00382f382476de824a46682d3379657a7355825` を `main` へpush: PASS。Pages production deployment `e16a804d-3789-4498-a2f8-5653d385f124` がこのcommitから公開され、公開URLから新データを取得できた。
+- 最終 `npm test`: 30/30 PASS。`npm run build` / `git diff --check`: PASS。先行の全20問ソルバー・Pages Functionsコンパイル検証もPASS。
+- 公開URLの実Chrome / Playwright: 10項目PASS。トップのリンクから遷移、公開20問JSONとローカルの全内容一致、各難易度1問の開始・ドラッグ・Undo・リセット・正解クリア・報酬表示・盤面fit、全20問の390×844幅fit、既存2ゲームの表示、page errorなし。
+- 最終ブラウザ確認の匿名イベント73件すべてHTTP 204。本番D1を読み取り、対象73件の全送信項目と保存値が一致。全5難易度のclearログあり。migration前バックアップと旧9行の全既存列も一致。
+- 本番DBの94行は今回と従来の確認イベントを含む。UI検証中の再試行も実利用者の反応として扱わない。削除は行っていない。
+- push初回は環境変数側のGitHub認証で403。子プロセスのみ環境変数を除外し、既存の同一アカウントの保存済み認証でpush成功。永続の認証・権限設定は変更なし。
+- 公開確認スクリプト初回はreset後の古い座標によるclear待ちtimeout、次は画像ロード前の判定でFAIL。reset後の座標取得と画像ロード待ちを直して再実行PASS。ゲームソース変更なし。
+- 証拠: visualizationsのpublication-browser-qa.json / publication-d1-verification.json / public-mobile.png。SQLバックアップとD1照合データはGit対象外の .wrangler/。実スマホ・他ブラウザ・人間の初見難易度は未確認。
