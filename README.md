@@ -4,6 +4,8 @@
 
 ## ローカル起動・build
 
+全7ゲームの終了画面から共通の「記録カード」を表示し、PNG保存・対応ブラウザで画像コピーと画像共有・X投稿画面を開けます。[仕様・実測結果](RESULT-CARDS.md)を参照してください。本番ではD1 migration `0008_result_cards.sql` が必要です。既存Unityの読み取り専用snapshot bridgeを再利用するため、この機能にUnityの再ビルドは不要です。
+
 Node.js 24（検証: 24.14.1）、npmを使用します。
 
 ```powershell

@@ -1,4 +1,5 @@
 import { validNumberEvent } from '../number-tap/events.js';
+import { CARD_EVENTS, CARD_COLUMNS, validCardEvent } from '../src/card-events.js';
 import { RULES } from '../src/game.js';
 import { validStrokeEvent } from '../one-stroke/events.js';
 import { validBlockEvent } from '../color-blocks/events.js';
@@ -34,6 +35,7 @@ export function validEvent(event) {
   // Optional metadata is normalized separately; keep the game allowlists strict.
   const { is_test, ...payload } = event;
   event = payload;
+  if (CARD_EVENTS.includes(event.event_name)) return validCardEvent(event);
   if (['drum-smash', 'small-konbini'].includes(event.game_id)) return validWebglEvent(event);
   if (event.game_id === 'number-tap') return validNumberEvent(event);
   if (event.game_id === 'color-blocks') return validBlockEvent(event);
@@ -105,6 +107,12 @@ export async function ingest(request, env) {
   if (!validEvent(event)) return new Response(null, { status: 400, headers });
   event.is_test = normalizeIsTest(event.is_test);
   try {
+    if (CARD_EVENTS.includes(event.event_name)) {
+      const columns=['is_test',...CARD_COLUMNS];
+      await env.GAME_LOG_DB.prepare(`INSERT INTO result_card_events (id,${columns.join(',')}) VALUES (${Array(columns.length+1).fill('?').join(',')}) ON CONFLICT DO NOTHING`)
+        .bind(event.event_id,...columns.map(k=>event[k]??null)).run();
+      return new Response(null,{status:204,headers});
+    }
     // Store only explicit anonymous columns. Never read/log IP or User-Agent.
     const columns = ['is_test','game_id','event_seq','event_name','timestamp','session_id','play_id','previous_play_id','board_width','board_height','mine_count','card_theme','elapsed_seconds','opened_cells','flags_used','flip_count','mismatch_count','pairs_matched','puzzle_id','difficulty','width','height','playable_cells','move_count','undo_count','reset_count','color_count','target_score','final_score','total_blocks_removed','largest_group_removed','remaining_blocks','max_number','miss_count'];
     await env.GAME_LOG_DB.prepare(`INSERT INTO game_events

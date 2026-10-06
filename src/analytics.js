@@ -1,3 +1,4 @@
+import { observeResult } from './result-cards.js';
 // IDs live only in this module's instance; no cookies or browser storage.
 function uuid() {
   if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
@@ -27,6 +28,7 @@ export function preserveTestLinks(root = globalThis.document) {
 preserveTestLinks();
 
 export async function sendEvent(event, endpoint = '/api/events') {
+  try { observeResult(event,sendEvent); } catch { /* Card failure cannot stop gameplay or logging. */ }
   try {
     const response = await fetch(endpoint, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },

@@ -1,0 +1,14 @@
+@font-face{font-family:'Record Japanese';src:url('/assets/fonts/NotoSansCJKjp-Regular.otf') format('opentype');font-display:swap}
+#record-card-dialog{box-sizing:border-box;width:min(96vw,960px);max-width:96vw;max-height:94dvh;margin:auto;padding:20px;border:1px solid #9bb5a5;border-radius:14px;background:#f4f2e9;color:#19372e;overflow:auto;font-family:'Record Japanese',sans-serif}
+#record-card-dialog::backdrop{background:#10271fc9}
+#record-card-dialog h2{font-size:22px;margin:0 0 12px}
+.record-preview canvas{display:block;width:100%;height:auto}
+.record-description{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.6}
+.record-actions{display:flex;gap:8px;flex-wrap:wrap}
+.record-actions button,.record-open,.record-close{font:inherit;padding:12px 18px;min-height:44px;border:1px solid #25644f;border-radius:8px;background:#fff;color:#19372e;cursor:pointer}
+.record-open{display:block;margin:12px auto;position:relative;z-index:2}
+.record-open[hidden]{display:none}
+.record-actions button:disabled{opacity:.5;cursor:default}
+.record-status{font-size:14px;min-height:1.5em}
+body[data-game-id] .record-open{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:5}
+@media(max-width:480px){#record-card-dialog{padding:12px}.record-actions button{flex:1 1 42%;font-size:14px}}
