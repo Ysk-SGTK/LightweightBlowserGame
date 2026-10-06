@@ -486,3 +486,48 @@ Hard以上10問すべてについて、正解経路の途中で別の合法な�
 - 最終ソースはローカル40/40 tests、構文・production build・Pages Function compile通過済み。公開時にゲームソースの追加改善なし。
 - 証拠: 前記visualizations配下のnumber-tap-public-qa.json／.mjs、number-tap-public-d1-verification.json、number-tap-public-mobile.png。Git対象外 `.wrangler/` にスキーマ／件数・今回の検証イベント照合結果。実スマホ・他ブラウザ・人間の初見所要時間は未確認。
 - この公開結果文書もmainへcommit／pushして作業を終了する。
+
+## 開発・自動検証ログの区別（is_test）
+
+通常ユーザー確認は `/game/`、手動開発確認・Codexの自動ブラウザ検証は **必ず `/game/?test=1`** を使う。既存queryがある場合は `&test=1` を追加する（URLSearchParams.set推奨）。例: `https://lightweight-browser-games.pages.dev/minesweeper/?test=1`。トップページからの同一originリンク・ゲームからの戻りリンクもtestフラグを維持する。
+
+共通 `src/analytics.js` のsendEventが送信のたびにURLSearchParamsで `test` の値が `1` か判定し、すべてのイベントへbooleanのis_testを付ける。APIはtrue／数値1のみ1、それ以外（false／0／欠落／異常値）は0へ正規化する。文字列 `"1"` 等をtruthyとして扱わない。追加migration `0007_add_is_test.sql` は現行ログ表 `game_events` に `is_test INTEGER NOT NULL DEFAULT 0` を追加する。旧クライアント・既存ログ・従来のprivacy allowlistを維持する。旧保存用events／memory_events表は現在書込みがなく、変更しない。
+
+対象: minesweeper、memory、one-stroke（next_levelを含む）、color-blocks、number-tap、drum-smash、small-konbini。Unityの既存配信ビルドにはJSログbridgeがないため、両WebGL HTMLから共通JavaScriptでpage_viewを記録する。Unityのゲーム開始／retry／結果をロードから推測しない。Unityゲームロジック・Buildバイナリは変更しない。トップ自体は従来どおりログを送信しない。
+
+ログ分析では `is_test=0` のみを**本番アクセス候補**とする。`analysis/summary.sql` の全集計もこの条件を適用する。**is_test導入以前のログは開発アクセスが混在している可能性がある。DEFAULT 0は互換性のためであり、既存is_test=0を実ユーザーと断定しない。** 過去ログの削除・推測分類・既存列値の書換えは行わない。is_testは自己申告の分析用フラグで、認証やbot判定には利用しない。
+
+```sql
+-- 本番アクセス候補
+SELECT * FROM game_events WHERE is_test = 0 ORDER BY timestamp DESC;
+-- テストアクセス
+SELECT * FROM game_events WHERE is_test = 1 ORDER BY timestamp DESC;
+-- ゲーム別・イベント別の本番候補件数
+SELECT game_id, event_name, COUNT(*) AS count
+FROM game_events WHERE is_test = 0
+GROUP BY game_id, event_name ORDER BY game_id, event_name;
+```
+
+検証手順: `npm test` → `npm run check` → `npm run build` → `npm run deploy:check` → ローカルD1 migration → `wrangler pages dev dist --persist-to .wrangler/is-test-local --ip 127.0.0.1 --port 4175`。通常URLとtest URLの差分確認は隔離したローカルD1だけで行う。本番自動ブラウザ検証はすべてtest=1を使い、APIの204だけで保存済みとは判断せず、自分のevent_idを指定したD1 SELECTでis_testと既存項目を照合する。本番でtestなしアクセスを作る確認は手動ユーザー確認とし、Codexからは行わない。既存の古い実測記録中のURL／検証手順にも、今後実行するときはこのルールを適用する。
+### is_test導入の検証結果（2026-10-06）
+
+モデル／推論はチャット設定を維持。既存の共通送信とD1契約を小さく拡張するTaskのためサブエージェント不使用。対象外: ゲームルール・UI・Unityバイナリ・追跡ID・過去ログ削除／分類。既存の未追跡Unity-Game-Lab一式は編集・commit対象外。
+
+変更ファイル: src/analytics.js、src/webgl-analytics.js、worker/index.js、migrations/0007_add_is_test.sql、index.html、drum-smash/index.html、small-konbini/index.html、analysis/summary.sql、package.json、README.md、tests/is-test.test.mjs、既存tests/analytics・memory・one-stroke・color-blocks・number-tap・pages.test.mjs（最新migrationをfixtureへ追加）。Pages Function自体は既存のonRequest→ingest委譲をそのまま使用。
+
+| 検証 | 実測 |
+| --- | --- |
+| npm test | PASS 44/44。7ゲーム×両flagの共通送信→Pages API→SQLite、全既存イベント、旧クライアント・異常flag・余分な個人情報拒否、0007前後の既存列／行保持、全従来ゲーム回帰 |
+| npm run check | PASS。WebGL共通JSも構文確認に追加 |
+| npm run build | PASS。トップ＋HTML5ゲーム5本＋Unity2本を含む静的production build |
+| npm run deploy:check | PASS。Pages Functions compiled。sandboxで親ディレクトリ読取拒否となった初回はFAIL、同じローカルcompileを許可された環境で再実行してPASS |
+| npx wrangler d1 migrations apply GAME_LOG_DB --local --persist-to .wrangler/is-test-local | PASS。隔離ローカルD1に0001〜0007適用 |
+| Chrome / Playwright 1280×900、通常URLとtest=1 | PASS。全7ゲーム×2条件、トップ7リンク・query維持、HTMLゲームの開始／retry、一筆のCLEAR／next_level／次問題、数字順押しのCLEAR／retry、Unity2本の初期化、page errorなし |
+| ローカルD1 SELECT→全送信項目照合 | PASS 43/43。通常21件is_test=0、test22件is_test=1。page_view／game_start／retry／game_clear／next_levelを保存。全HTTP204。ブラウザrequestのevent_idと保存行の全既存送信項目も一致 |
+| Unityスプラッシュ終了後の実画面 | PASS。Drum Smashの球・ドラム缶・スコア、ちいさなコンビニの店舗・商品棚・営業操作ボタンをスクリーンショットで目視確認。page errorなし。ローカルUnityCacheのContent-Length警告2件はダウンロード効率警告で、ゲーム／ログ障害は観測なし |
+
+証拠と一時検証コード: Git対象外 `.wrangler/is-test-local-browser.json`、is-test-local-d1.json、is-test-local-d1-verification.json、is-test-local-webgl-smoke.json、is-test-local-*-ready.png、is-test-browser.mjs、is-test-verify-d1.mjs、is-test-webgl-smoke.mjs。Browserプラグインがないため既存Playwright／Chromeを使用。Unityロード直後の初回画像はスプラッシュでありゲーム画面の証明にせず、6秒待機後の実ゲーム画面を別途取得した。
+
+初回テストのFAILはSQLite行のnull prototypeとobject spread後のplain objectの比較差。全列値は一致しており、比較側でplain objectへ統一後44/44 PASS。Cloudflare初回状態読取はsandbox network制限、許可された環境でも一度7403。再読取で対象DB ID一致と実名lightweightblowsergame、未適用0007のみ、既存116行（color-blocks3／memory6／minesweeper5／number-tap17／one-stroke85）を確認。既存列のスキーマexportとD1 Time Travel復旧bookmarkをGit対象外.wranglerへ取得。過去データ全件exportは行わない。
+
+本番0007適用は初回自動承認レビューが具体的な本番書込み承認不足として拒否した後、対象DB IDとALTER TABLE内容を提示しユーザーの明示承認を取得。npx wrangler d1 migrations apply GAME_LOG_DB --remote はPASS、未適用migrationなし。前後の既存116行のゲーム別件数と既存列定義が一致、新列はINTEGER NOT NULL DEFAULT 0、既存全行のis_testは0。既存行の全値を本番から取得した比較は実施しない。公開API反映はmigration完了後に進める。実スマホ・Safari／Firefox、Unityゲームの全日数／全ステージ完走は未確認。

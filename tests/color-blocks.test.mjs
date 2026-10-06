@@ -59,6 +59,7 @@ test('four-game D1 preserves all history; logs strict, deduplicated and linked',
   const old=db.prepare('SELECT * FROM game_events').get();db.exec(readFileSync(new URL('../migrations/0005_color_blocks.sql',import.meta.url),'utf8'));
   const updated=db.prepare('SELECT * FROM game_events').get();for(const k of Object.keys(old))assert.equal(updated[k],old[k]);
   db.exec(readFileSync(new URL('../migrations/0006_number_tap.sql',import.meta.url),'utf8'));
+  db.exec(readFileSync(new URL('../migrations/0007_add_is_test.sql',import.meta.url),'utf8'));
   const env={GAME_LOG_DB:{prepare:sql=>({bind:(...args)=>({run:async()=>db.prepare(sql).run(...args)})})}};
   const events=[],a=createBlockAnalytics({send:e=>events.push(e)}),spec=settings('Easy');
   const stats={final_score:300,elapsed_seconds:40,total_blocks_removed:100,largest_group_removed:10,move_count:30,remaining_blocks:20};

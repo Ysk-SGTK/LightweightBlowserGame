@@ -39,6 +39,7 @@ test('D1 adds only two columns and retains four-game history; strict decimal log
   for(const file of ['0001_events.sql','0002_memory_events.sql','0003_game_events.sql','0004_one_stroke.sql','0005_color_blocks.sql'])db.exec(readFileSync(new URL('../migrations/'+file,import.meta.url),'utf8'));
   for(const name of ['minesweeper','memory','one-stroke','color-blocks'])db.prepare("INSERT INTO game_events(id,game_id,event_seq,event_name,timestamp,session_id,play_id) VALUES(?,?,1,'game_start','time','session',?)").run(name,name,name);
   const old=db.prepare('SELECT * FROM game_events ORDER BY id').all();db.exec(readFileSync(new URL('../migrations/0006_number_tap.sql',import.meta.url),'utf8'));
+  db.exec(readFileSync(new URL('../migrations/0007_add_is_test.sql',import.meta.url),'utf8'));
   const updated=db.prepare('SELECT * FROM game_events ORDER BY id').all();
   old.forEach((row,i)=>Object.keys(row).forEach(k=>assert.equal(updated[i][k],row[k])));
   const env={GAME_LOG_DB:{prepare:sql=>({bind:(...args)=>({run:async()=>db.prepare(sql).run(...args)})})}};

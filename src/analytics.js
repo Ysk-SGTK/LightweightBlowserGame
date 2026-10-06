@@ -9,11 +9,28 @@ function uuid() {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
+export function isTestAccess(search = globalThis.location?.search ?? '') {
+  return new URLSearchParams(search).get('test') === '1';
+}
+
+// Preserve the test marker when navigating between local game pages.
+export function preserveTestLinks(root = globalThis.document) {
+  if (!root || !isTestAccess()) return;
+  for (const link of root.querySelectorAll('a[href]')) {
+    const url = new URL(link.href, globalThis.location.href);
+    if (url.origin !== globalThis.location.origin) continue;
+    url.searchParams.set('test', '1');
+    link.href = url.href;
+  }
+}
+
+preserveTestLinks();
+
 export async function sendEvent(event, endpoint = '/api/events') {
   try {
     const response = await fetch(endpoint, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(event), credentials: 'omit', keepalive: true,
+      body: JSON.stringify({ ...event, is_test: isTestAccess() }), credentials: 'omit', keepalive: true,
       redirect: 'error', signal: AbortSignal.timeout(4000)
     });
     if (!response.ok) throw new Error('unavailable');

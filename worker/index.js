@@ -31,6 +31,10 @@ export function validMemoryEvent(event) {
 
 export function validEvent(event) {
   if (!event || typeof event !== 'object' || Array.isArray(event)) return false;
+  // Optional metadata is normalized separately; keep the game allowlists strict.
+  const { is_test, ...payload } = event;
+  event = payload;
+  if (['drum-smash', 'small-konbini'].includes(event.game_id)) return validWebglEvent(event);
   if (event.game_id === 'number-tap') return validNumberEvent(event);
   if (event.game_id === 'color-blocks') return validBlockEvent(event);
   if (event.game_id === 'one-stroke') return validStrokeEvent(event);
@@ -56,6 +60,20 @@ export function validEvent(event) {
     if (event.event_name === 'game_clear' && event.opened_cells !== RULES.size ** 2 - RULES.mines) return false;
   }
   return true;
+}
+
+function validWebglEvent(event) {
+  const keys = ['game_id','event_id','event_seq','event_name','timestamp','session_id','play_id','previous_play_id'];
+  return Object.keys(event).length === keys.length && keys.every(key => Object.hasOwn(event, key))
+    && event.event_name === 'page_view' && event.event_seq === 1
+    && ['event_id','session_id'].every(key => typeof event[key] === 'string' && UUID.test(event[key]))
+    && event.play_id === null && event.previous_play_id === null
+    && typeof event.timestamp === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(event.timestamp)
+    && Number.isFinite(Date.parse(event.timestamp));
+}
+
+export function normalizeIsTest(value) {
+  return value === true || value === 1 ? 1 : 0;
 }
 
 async function readLimitedJson(request) {
@@ -85,9 +103,10 @@ export async function ingest(request, env) {
   let event;
   try { event = await readLimitedJson(request); } catch { return new Response(null, { status: 400, headers }); }
   if (!validEvent(event)) return new Response(null, { status: 400, headers });
+  event.is_test = normalizeIsTest(event.is_test);
   try {
     // Store only explicit anonymous columns. Never read/log IP or User-Agent.
-    const columns = ['game_id','event_seq','event_name','timestamp','session_id','play_id','previous_play_id','board_width','board_height','mine_count','card_theme','elapsed_seconds','opened_cells','flags_used','flip_count','mismatch_count','pairs_matched','puzzle_id','difficulty','width','height','playable_cells','move_count','undo_count','reset_count','color_count','target_score','final_score','total_blocks_removed','largest_group_removed','remaining_blocks','max_number','miss_count'];
+    const columns = ['is_test','game_id','event_seq','event_name','timestamp','session_id','play_id','previous_play_id','board_width','board_height','mine_count','card_theme','elapsed_seconds','opened_cells','flags_used','flip_count','mismatch_count','pairs_matched','puzzle_id','difficulty','width','height','playable_cells','move_count','undo_count','reset_count','color_count','target_score','final_score','total_blocks_removed','largest_group_removed','remaining_blocks','max_number','miss_count'];
     await env.GAME_LOG_DB.prepare(`INSERT INTO game_events
       (id,${columns.join(',')}) VALUES (${Array(columns.length+1).fill('?').join(',')}) ON CONFLICT DO NOTHING`)
       .bind(event.event_id, ...columns.map(key => event[key] ?? null)).run();
