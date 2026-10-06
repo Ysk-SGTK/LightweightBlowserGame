@@ -33,6 +33,7 @@ npm run analyze:local
 | `/one-stroke/` | 5難易度・20問の一筆書き |
 | `/color-blocks/` | 10×12・3難易度の色ブロック消しパズル |
 | `/drum-smash/` | PC向けUnity 3D物理ゲーム。3球で15本中12本のドラム缶を倒す |
+| `/small-konbini/` | PC向けUnity箱庭経営ゲーム。仕入れ・価格・棚配置・店員数を決めて7日間営業する |
 | `POST /api/events` | 共通匿名イベント受信API |
 
 ```text
@@ -57,6 +58,8 @@ wrangler.jsonc             # Pages / D1設定
 `dist/` は `/index.html`、`/minesweeper/index.html`、`/memory/index.html`、JS / CSS / 画像などを含みます。Functionはリポジトリ直下の `functions/` からPagesが別途コンパイルします。DB・README・テスト・依存・機密ファイルは配信しません。`_routes.json` はFunctionsを `/api/*` に限定し、ゲームの静的配信をFunctionsから分離。404.htmlにより、存在しないパスがトップページに化けるSPA fallbackを避けます。
 
 ドラム缶スマッシュは検証済みWeb Buildを `drum-smash/` に保持し、通常の `npm run build` で `dist/drum-smash/` にコピーします。サイトのビルド環境にUnityは不要です。Unityで再ビルドした場合は `Unity-Game-Lab/drum-smash/Build/Web/` の内容を配信用 `drum-smash/` へ更新してください。UnityのLibrary、ローカルログ・証跡はGit対象外です。このゲームでは匿名イベントAPIへの送信を追加していません。
+
+ちいさなコンビニは検証済みWeb Buildを `small-konbini/` に保持し、通常の `npm run build` で `dist/small-konbini/` にコピーします。Unityソースは `Unity-Game-Lab/small-konbini/`。再ビルド時は同プロジェクトの `Build/Web/` の内容を配信用 `small-konbini/` へ更新してください。匿名イベントAPIへの送信は追加していません。
 
 ## Cloudflare Pages設定値
 
