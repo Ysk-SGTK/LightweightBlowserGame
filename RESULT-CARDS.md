@@ -72,6 +72,14 @@ Canvas.toBlobでPNG化。保存はBlob URLとdownload属性（`<gameId>-result.p
 
 本番D1 `lightweightblowsergame`（既存GAME_LOG_DB / ID `9d4b7505-3f13-45db-96f8-82a46b752a5d`）へ0008のみ適用済み。依頼文の本番ログ保存・push・公開指示に基づく。バックアップ `.wrangler/before-result-cards.sql` 取得済み。適用前のgame_eventsは137件（rowid上限137）、events / memory_eventsは0件。適用後も旧rowid範囲137件を保持、result_card_events作成、0001〜0008適用履歴を確認。
 
-GitHub origin/mainへcommit・pushし、自動Cloudflare Pages deploy完了と本番QAを続ける。本番サイト: https://lightweight-browser-games.pages.dev/ 。検証時は必ずtest=1を付ける。公開検証結果は以下へ追記する。
+機能commit: `790a677e5e51e663fe5b2ee06f340ce552f70870` / `Add shareable result cards and titles`。GitHub `Ysk-SGTK/LightweightBlowserGame` のorigin/mainへpush成功。最初の自動承認レビュー拒否は添付依頼36〜38の明示指示を再提示して解消。環境注入認証の403は、子プロセスのみで注入設定を外し既存GitHub CLI保存認証を使用して解消。永続credential・権限変更なし。
+
+Cloudflare Pages production deployment `cb362adf-534e-41d0-bdb4-96d2def03940` が機能commitを取得し、initialize / clone_repo / build / deployすべてsuccess。本番サイト: https://lightweight-browser-games.pages.dev/ 。
+
+本番 `https://lightweight-browser-games.pages.dev/number-tap/?test=1` を実プレイし、CLEAR→カード→PNG保存→実Clipboard PNG書込/読み戻し→X intent→390px表示→retryまでPASS。トップと全7ゲームのURLはHTTP 200。ページ例外0。共有画像・テキストのURLはtest=1を含まない。
+
+page_view / game_start / game_clear / result_card_open / download / copy / x_share / retryが全HTTP 204。D1 queryでカード4操作のgame_id / title_key / primary_result / is_test=1保存、同じsession_id・play_idのgame_clearとの4件の紐付けを確認。旧137件も保持。Web Share成功イベントはローカルの成功APIテストで保存済みだが、本番OS共有先への実送信は行っていない。
+
+証跡: `.wrangler/card-evidence/production.json`, `number-tap-production.png`, `production-desktop.png`, `production-mobile.png`。結果文書の公開確認追記を別commitに保存する。既存の未追跡Unity smoke-test関連6項目は保持し、今回のcommitへ含めない。
 
 未確認: 実スマホSafari / Android、OS共有先での画像送信完了、全ブラウザのClipboard permission挙動。これらは人間側で確認が必要。既存Unityソース・バイナリ変更なしのためUnity production再buildは不要。
