@@ -1,4 +1,77 @@
 # ちいさなコンビニ — 箱庭店舗への改修結果
+
+## 2026-10-09 CONBINI-GFX-001 ビジュアル改善・仕上げ完了
+
+TaskのZIPとcurrent_screen.pngを確認し、2026-10-08の変更・基準画像・検証を引き継いで仕上げた。経営仕様の追加・調整は行っていない。添付画像は一部が切り取られているため、HUDの欠けを不具合と断定せず、実ブラウザの全画面を基準にした。
+
+### 調査結果と保護対象
+- Unity 6000.6.4f1、Built-in Render Pipeline、Standard Shader、固定Orthographic Camera。ゲーム領域77%を維持。URP移行・Unity更新・追加パッケージなし。
+- Sceneは `Assets/Scenes/SmallKonbini.unity`。Prefabなし。`StoreView.cs` がPrimitiveと独自Meshで街・棚・商品・人物を実行時生成。既存16素材、NotoSansCJKjp-Regular.otf（SIL OFL）を利用。新規外部素材・有料アセットなし。
+- UIはIMGUI/OnGUI。1200×720の論理座標をCanvas寸法へ拡縮し、棚札はWorldToScreenPointで投影するScreen Space UI。ホバーだけに依存せずクリック／タッチで情報カードを開く。
+- 棚やレジの物理選択Colliderは元々なく、生成PrimitiveのColliderは削除される。操作はUIボタン。6棚・8スロットの配置判定・カテゴリID・容量・座標はStoreSimulationの既存値。
+- `ShopModel.cs`、`StoreSimulation.cs`、`ShopForecast.cs`、Scene/GUID、Packages、ProjectSettingsはGit差分なし。経営計算・需要・価格・在庫・レジ・廃棄・人件費・7日間進行を保護。
+- 永続セーブ／ロードは既存実装にない。7日間のメモリ内履歴、翌日持越し、過去結果の再表示・不変性を確認。
+- 作業前からあるUnity-Game-Lab直下の未追跡実験・証跡・ツールは保持。現在のWebページにある共通analytics／結果カード連携も維持。
+- WebGLはIL2CPP、圧縮無効、初期128MB、最大2048MB、threads無効。既存テンプレートを使い、生成HTML/CSSに日本語・レスポンシブ枠・既存連携を再適用する。
+
+### 変更内容・Before / After
+- **ラベル**：棚上の大きい白ラベルを撤去し、棚の手前側に86×23の小さな売り場札。最終仕上げでは温かい紙色・角のない札・細い縁に調整。文字12pxとクリック範囲・位置は維持。選択時は琥珀色となり、容量・価格・営業中の棚／倉庫在庫を情報カードで確認できる。開店前はそこから既存の棚配置画面へ進める。
+- **棚／商品**：棚板・脚・背板・価格レール・値札を追加。三角おにぎりと海苔、弁当容器とごはん／おかず、ボトル、菓子袋、日用品箱／ティッシュを描き分ける。既存8個の視覚表現と数量に応じた表示を維持。
+- **冷蔵ケース**：商品を覆っていた奥行0.91の上部を奥行0.23・背面位置0.31の薄いヘッダーへ変更。最終画像で上下段のボトルと棚の縁が見えることを確認。
+- **床**：強い市松模様をやめ、同系色のクリームタイルと細い目地へ。店舗内の情報を読みやすくし、街・道路・隣接建物は彩度を抑えた。
+- **UI**：HUD・下部メニュー・Modal・選択／通常／押下／無効ボタンを青緑／クリーム／琥珀で統一。仕入れ・価格・棚配置・開店・速度・日次結果・前日結果などの既存操作を保持。
+- **店舗**：架空の看板帯、カットアウェイ入口・淡色ガラス表現、倉庫ドア、段ボールのテープ、会計トレー、レジ小物、接地色を追加。ガラス感は不透明な淡色と反射線で表現し、透明素材の重なりを増やさない。
+- **負荷対策**：16×1の生成色パレット、結合Mesh、商品カテゴリ／人物色ごとのMesh共有を使用。ポストプロセス・追加ライトなし。
+
+### 確認結果
+| 項目 | 結果 | 実測・範囲 |
+| --- | --- | --- |
+| Unity Editor実行 | PASS | 保存済みSceneで実Play Mode、7日間完走、143.57秒、Consoleエラー0件。最終の棚札の紙色／縁調整前に取得した実測を再利用。最終C#はWebGLビルドでコンパイルし、ブラウザで検証。 |
+| モデル・在庫・配置・日次結果・予測の既存検査 | PASS | store-tests-v4.json / daily-results-tests.json / forecast-tests.json。棚入替・商品重複・冷蔵制限・開店中ロック・売上の会計時反映・在庫整合・予測が本番乱数を変えないことを確認。 |
+| 最終WebGLビルド | PASS | 79.46秒、summary 34,970,451bytes、エラー0・警告0。 |
+| 最終WebGLブラウザ7日間 | PASS | Chrome 154.0.8037.93、45項目PASS、重大エラー0件。実Canvasの入力で仕入れ・価格・棚配置・開店・会計・品出し・2人の並行動作・翌日・前日比較・7日間最終結果・再プレイを確認。売上323個、利益28,716円。 |
+| 狭幅・タッチ・125%表示 | PASS（限定条件） | 1024×768、800×600で横はみ出しなし。タッチで棚札→詳細→棚配置、価格操作を確認。125%はCSS zoom=1.25で模擬し、横はみ出しなし・クリック位置正常。Chromeメニューによるネイティブズームは未検証。 |
+| Before / After同条件 | PASS | state/day/clock/cash/weather/order/price/stock/staffCount/shelves一致をJSON比較。通常天気(weather=0)、初日08:00、所持金30000円、仕入予定22/12/38/16/6、同じ初期配置。 |
+| サイト用静的ビルド | PASS | 検証済みBuild/Webをsmall-konbiniへ反映し、npm run build成功。 |
+
+### 性能比較
+Chrome 154.0.8037.93 headless、Windowsの同一PC、viewport1280×860・Canvas1200×720、上記の同一開店準備状態。各1回の起動観測と5秒間requestAnimationFrame間隔で測定。Baselineは2026-10-08の保存済みビルド・実測を再利用。OSキャッシュや測定揺れを含むため、細かな差を性能向上と断定しない。
+
+| 指標 | Before | After |
+| --- | ---: | ---: |
+| 起動→開店準備が観測可能 | 3.098秒 | 3.094秒 |
+| ブラウザ表示周期の換算fps | 32.16 | 32.19 |
+| フレーム間隔p95 | 31.60ms | 31.80ms |
+| 配布ファイル全体 | 34,833,042bytes | 34,975,431bytes |
+
+配布サイズ差は142,389bytes（0.41%）。Unity内部ProfilerのFPS、GPU時間・メモリ、Draw Calls、混雑時の連続FPSは未測定。32fps前後はこのheadless環境の表示周期であり、実機スマホの速度や60fps動作を保証する数値ではない。
+
+### 画像・証跡・再現
+- [before-morning.png](C:/Users/Yusuke/Documents/ChatGPT/CheapGame/output/conbini-gfx-001/before-morning.png) / [after-morning.png](C:/Users/Yusuke/Documents/ChatGPT/CheapGame/output/conbini-gfx-001/after-morning.png)：同状態・同寸法の実WebGL画面。
+- [comparison.html](C:/Users/Yusuke/Documents/ChatGPT/CheapGame/output/conbini-gfx-001/comparison.html)：並べて比較するHTML。
+- [after-shelf-info.png](C:/Users/Yusuke/Documents/ChatGPT/CheapGame/output/conbini-gfx-001/after-shelf-info.png)：タッチで開いた棚情報。[after-order-1024.png](C:/Users/Yusuke/Documents/ChatGPT/CheapGame/output/conbini-gfx-001/after-order-1024.png)、[after-price-800.png](C:/Users/Yusuke/Documents/ChatGPT/CheapGame/output/conbini-gfx-001/after-price-800.png)、[after-price-zoom125.png](C:/Users/Yusuke/Documents/ChatGPT/CheapGame/output/conbini-gfx-001/after-price-zoom125.png)：狭幅・拡大時の表示。
+- [browser/browser-two-staff-restock-v4.png](C:/Users/Yusuke/Documents/ChatGPT/CheapGame/output/conbini-gfx-001/browser/browser-two-staff-restock-v4.png)、[browser/browser-comparison-v4.png](C:/Users/Yusuke/Documents/ChatGPT/CheapGame/output/conbini-gfx-001/browser/browser-comparison-v4.png)、[browser/browser-final-v4.png](C:/Users/Yusuke/Documents/ChatGPT/CheapGame/output/conbini-gfx-001/browser/browser-final-v4.png)：営業・補充・日次・7日間結果。
+- [editor-play.json](C:/Users/Yusuke/Documents/ChatGPT/CheapGame/output/conbini-gfx-001/editor-play.json)、[web-build.json](C:/Users/Yusuke/Documents/ChatGPT/CheapGame/output/conbini-gfx-001/web-build.json)、[browser/browser-tests-v4.json](C:/Users/Yusuke/Documents/ChatGPT/CheapGame/output/conbini-gfx-001/browser/browser-tests-v4.json)、[ui-tests.json](C:/Users/Yusuke/Documents/ChatGPT/CheapGame/output/conbini-gfx-001/ui-tests.json)、[comparison.json](C:/Users/Yusuke/Documents/ChatGPT/CheapGame/output/conbini-gfx-001/comparison.json)：実測値とPASS/FAIL。
+- 実行コマンド：Unity -batchmode -executeMethod ShopAutomation.PlayExisting（既存SceneでPlay Mode）、Unity -batchmode -quit -buildTarget WebGL -executeMethod ShopAutomation.BuildWeb、node output/conbini-gfx-001/compare.cjs after、node output/conbini-gfx-001/verify-ui.cjs、node output/conbini-gfx-001/verify-browser.cjs、npm run build。
+- ローカル確認URL： http://127.0.0.1:4188/after/ 。比較サーバーは/api/eventsを204で返すローカルスタブ。外部送信・本番DB保存の検証ではない。
+
+### 変更ファイル
+- Unity-Game-Lab/small-konbini/Assets/Scripts/StoreView.cs：店舗・棚・商品・人物の描画とMesh共有。
+- Unity-Game-Lab/small-konbini/Assets/Scripts/KonbiniGame.cs：HUD・ボタン・棚札・情報カード。経営操作の本体は維持。
+- Unity-Game-Lab/small-konbini/Assets/Editor/ShopAutomation.cs：既存Sceneを再生成しない検証・ビルド、HTML/CSSへの日本語・表示枠・既存連携再適用。
+- small-konbini/Build/Web.data、Web.wasm、Web.loader.js：更新WebGL。
+- small-konbini/TemplateData/style.css、small-konbini/index.html：レスポンシブ枠・日本語・既存連携保持。
+- Unity-Game-Lab/small-konbini/RESULT.md：この最終報告。ローカル証跡はoutput/conbini-gfx-001に保持。
+
+### 残る弱点・未検証
+- 人物は簡易Primitive。棚札と壁の店名は画面投影なので、3Dの実物札・壁面文字の自然さには改善余地がある。忙しい時の吹き出し同士の重なりも残りうる。
+- 狭幅では情報Panelの細かい文字が小さくなる。PC中心の画面であり、実機スマホ向けの操作／読みやすさは未検証。
+- Chrome以外、実機タッチ端末、ネイティブブラウザズーム、画面全体のフルスクリーン／長時間性能、公開環境の表示・通信は未検証。本番API保存・デプロイ検証なし。
+- 既知の機能回帰は検出していない。公開品質の主観評価・人による長時間プレイ評価は未実施。
+- 途中の修正記録：制限環境のUnityライセンス接続停止→今回起動したPIDだけ停止して通常権限で再実行。比較サーバーの共通src不足による403→ローカル経路を追加。冷蔵上部の遮蔽／床の強い市松模様→画像を見て調整。125%模擬時の横はみ出し→100vwを100%へ修正してPASS。最初の画像はafter-first-pass.pngとして保持。
+
+---
+
 ## 2026-10-06 追加依頼：期待値シミュレーションと2人目の店員
 
 今回追加した経営要素は開店前の予測と毎日の追加店員選択のみ。以降の旧セクションは以前の改修履歴として保持する。変更前は `evidence/baseline-v3/`。

@@ -16,3 +16,12 @@ body { padding: 0; margin: 0 }
 #unity-build-title { float: right; margin-right: 10px; line-height: 38px; font-family: arial; font-size: 18px }
 #unity-fullscreen-button { cursor:pointer; float: right; width: 38px; height: 38px; background: url('fullscreen-button.png') no-repeat center }
 #unity-warning { position: absolute; left: 50%; top: 5%; transform: translate(-50%); background: white; padding: 10px; display: none }
+
+/* Responsive frame; the Unity view retains its 1200:720 aspect ratio. */
+body{background:#edf1e7;color:#1a3d3b}
+#unity-container.unity-desktop{width:min(1200px,100%)}
+#unity-fullscreen-container{width:100%!important;height:auto!important;aspect-ratio:5/3}
+#unity-fullscreen-container:fullscreen{width:100vw!important;height:100vh!important;aspect-ratio:auto}
+#unity-footer{height:38px;background:#fdfaf0}
+#unity-build-title{font-family:system-ui,sans-serif;font-size:14px}
+#unity-fullscreen-button:focus-visible{outline:3px solid #ad7926}

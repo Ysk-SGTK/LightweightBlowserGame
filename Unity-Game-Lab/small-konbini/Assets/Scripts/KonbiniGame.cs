@@ -10,7 +10,7 @@ public class KonbiniGame : MonoBehaviour {
     public string panel="";public int selectedShelf;float emit,feedbackUntil;string feedback="";GUIStyle text,small,title,button;Texture2D paper;bool styled;
     [DllImport("__Internal")] static extern void ShopSnapshot(string json);
     void Awake(){Application.targetFrameRate=60;Retry();}
-    public void Retry(){model=new ShopModel(Environment.TickCount);store=new StoreSimulation(model,Environment.TickCount);history.Clear();panel="";selectedShelf=0;forecastKey="";cachedForecast=null;cachedSingle=null;store.spawnView=c=>view.Spawn(c);store.removeView=c=>Destroy(c.body);store.sold=amount=>{feedback="+"+Money(amount);feedbackUntil=Time.unscaledTime+1.1f;};view.Build(store);}
+    public void Retry(){model=new ShopModel(Environment.TickCount);store=new StoreSimulation(model,Environment.TickCount);history.Clear();panel="";inspectedShelf=-1;selectedShelf=0;forecastKey="";cachedForecast=null;cachedSingle=null;store.spawnView=c=>view.Spawn(c);store.removeView=c=>Destroy(c.body);store.sold=amount=>{feedback="+"+Money(amount);feedbackUntil=Time.unscaledTime+1.1f;};view.Build(store);}
     string forecastKey="";ShopForecast cachedForecast,cachedSingle;
     public ShopForecast Prediction(){string key=model.weather+":"+model.staffCount+":"+model.OrderCost();for(int i=0;i<5;i++)key+=":"+model.stock[i]+":"+model.order[i]+":"+model.price[i];foreach(var s in store.shelves)key+=":"+s.slot+":"+s.product+":"+s.capacity;if(key!=forecastKey||cachedForecast==null){cachedForecast=ForecastCalculator.Calculate(store);cachedSingle=model.staffCount==2?ForecastCalculator.Calculate(store,1):cachedForecast;forecastKey=key;}return cachedForecast;}
     public bool Open(){if(model.state!="Morning"||model.OrderCost()>model.cash)return false;var f=Prediction();var single=cachedSingle;if(!store.Open())return false;model.report.forecast=f;model.report.singleStaffForecast=single;panel="";return true;}
@@ -31,29 +31,45 @@ public class KonbiniGame : MonoBehaviour {
     public static string Money(int value)=>value.ToString("N0")+"円";
     public static string Range(ForecastRange r,bool money=false){return r.low.ToString("N0")+"〜"+r.high.ToString("N0")+(money?"円":"個");}
     GUIStyle detail,wrapped;
-    void Styles(){if(styled)return;styled=true;paper=new Texture2D(1,1);paper.SetPixel(0,0,Color.white);paper.Apply();text=new GUIStyle(GUI.skin.label){font=view.japanese,fontSize=18,normal={textColor=new Color(.2f,.29f,.29f)}};small=new GUIStyle(text){fontSize=15};detail=new GUIStyle(text){fontSize=12};wrapped=new GUIStyle(small){fontSize=14,wordWrap=true};title=new GUIStyle(text){fontSize=28,fontStyle=FontStyle.Bold};button=new GUIStyle(GUI.skin.button){font=view.japanese,fontSize=19,alignment=TextAnchor.MiddleCenter,padding=new RectOffset(8,8,2,2)};foreach(var s in new[]{button.normal,button.hover,button.active,button.focused}){s.background=paper;s.textColor=new Color(.17f,.29f,.26f);}}
+    GUIStyle inverse, inverseSmall, inverseTitle,tagStyle; int inspectedShelf=-1;
+    static readonly Color Ink=new Color(.10f,.24f,.23f), Accent=new Color(.13f,.38f,.35f), Cream=new Color(.99f,.98f,.94f);
+    Texture2D Surface(Color color,bool rounded=false){var t=new Texture2D(16,16);t.filterMode=FilterMode.Bilinear;for(int y=0;y<16;y++)for(int x=0;x<16;x++){float dx=Mathf.Max(3-x,x-12),dy=Mathf.Max(3-y,y-12);t.SetPixel(x,y,rounded&&dx>0&&dy>0&&dx*dx+dy*dy>9?Color.clear:color);}t.Apply();return t;}
+    void Styles(){if(styled)return;styled=true;paper=Surface(Color.white);text=new GUIStyle(GUI.skin.label){font=view.japanese,fontSize=18,normal={textColor=Ink}};small=new GUIStyle(text){fontSize=15};detail=new GUIStyle(text){fontSize=12};wrapped=new GUIStyle(small){fontSize=14,wordWrap=true};title=new GUIStyle(text){fontSize=28,fontStyle=FontStyle.Bold};
+        inverse=new GUIStyle(text);inverse.normal.textColor=Cream;inverseSmall=new GUIStyle(small);inverseSmall.normal.textColor=new Color(.81f,.89f,.84f);inverseTitle=new GUIStyle(title);inverseTitle.normal.textColor=Cream;
+        button=new GUIStyle(GUI.skin.button){font=view.japanese,fontSize=18,alignment=TextAnchor.MiddleCenter,padding=new RectOffset(8,8,2,2),border=new RectOffset(4,4,4,4)};
+        button.normal.background=Surface(Color.white,true);button.hover.background=Surface(new Color(.90f,.96f,.92f),true);button.active.background=Surface(new Color(.74f,.85f,.78f),true);button.focused.background=button.hover.background;
+        tagStyle=new GUIStyle(button){fontSize=12,padding=new RectOffset(3,3,0,0),border=new RectOffset(0,0,0,0)};
+        tagStyle.normal.background=Surface(Color.white);tagStyle.hover.background=Surface(new Color(.96f,.98f,.95f));tagStyle.active.background=Surface(new Color(.88f,.93f,.87f));tagStyle.focused.background=tagStyle.hover.background;
+    }
     void Box(Rect rect,Color color){GUI.color=color;GUI.DrawTexture(rect,paper);GUI.color=Color.white;}
     void Label(float x,float y,float width,string value,GUIStyle style=null){GUI.Label(new Rect(x,y,width,40),value,style??text);}
-    bool Button(float x,float y,float w,float h,string value,bool enabled=true,bool selected=false){GUI.enabled=enabled;GUI.backgroundColor=selected?new Color(.52f,.83f,.66f):new Color(.92f,.96f,.89f);bool hit=GUI.Button(new Rect(x,y,w,h),value,button);GUI.backgroundColor=Color.white;GUI.enabled=true;return hit;}
+    bool Button(float x,float y,float w,float h,string value,bool enabled=true,bool selected=false){bool primary=selected||value=="開店"||value=="翌日の準備へ"||value=="決定";GUI.enabled=enabled;GUI.backgroundColor=!enabled?new Color(.81f,.83f,.80f):primary?Accent:new Color(.91f,.94f,.88f);foreach(var state in new[]{button.normal,button.hover,button.active,button.focused})state.textColor=primary&&enabled?Color.white:Ink;bool hit=GUI.Button(new Rect(x,y,w,h),value,button);GUI.backgroundColor=Color.white;GUI.enabled=true;return hit;}
     Vector2 ScreenPoint(Vector3 world){var p=view.cameraView.WorldToScreenPoint(world);return new Vector2(p.x/Screen.width*1200,(1-p.y/Screen.height)*720);}
     void Sign(Vector3 world,string value,float width=120){var p=ScreenPoint(world);Box(new Rect(p.x-width/2,p.y,width,29),new Color(1,.99f,.94f,.95f));GUI.Label(new Rect(p.x-width/2+5,p.y,width-10,28),value,small);}
     void OnGUI(){if(!view||model==null)return;Styles();GUI.color=Color.white;GUI.enabled=true;GUI.matrix=Matrix4x4.Scale(new Vector3(Screen.width/1200f,Screen.height/720f,1));
-        Box(new Rect(0,0,1200,72),new Color(1,.99f,.94f));Label(25,6,350,"ちいさなコンビニ",title);Label(390,11,150,model.day+"日目 / 7");Label(550,11,210,store.Clock()+"  "+(model.state=="Open"?store.Period():model.state=="Morning"?"開店準備":"閉店"));Label(810,11,355,"所持金  "+Money(model.cash));Label(28,42,450,"今日の天気      "+ShopModel.WeatherNames[model.weather],small);Box(new Rect(112,50,12,12),model.weather==4?new Color(.49f,.67f,.83f):model.weather==3?new Color(.35f,.6f,.72f):model.weather==2?new Color(.95f,.51f,.25f):model.weather==1?new Color(1,.78f,.3f):new Color(.48f,.69f,.48f));Label(570,42,390,"本日売上  "+Money(model.state!="Morning"&&model.report!=null?model.report.revenue:0),small);Label(1000,42,180,model.state=="Open"?(store.elapsed>=StoreSimulation.DaySeconds?"閉店の片付け":"営業中"):model.state=="Morning"?"開店準備":"閉店",small);
+        Box(new Rect(0,0,1200,72),Accent);Box(new Rect(0,69,1200,3),new Color(.94f,.63f,.22f));
+        Label(25,6,350,"ちいさなコンビニ",inverseTitle);Label(27,43,350,"今日の天気  /  "+ShopModel.WeatherNames[model.weather],inverseSmall);
+        Label(390,10,150,model.day+"日目 / 7",inverse);Label(550,10,210,store.Clock()+"  "+(model.state=="Open"?store.Period():model.state=="Morning"?"開店準備":"閉店"),inverse);
+        Label(810,10,355,"所持金  "+Money(model.cash),inverse);Label(550,43,410,"本日売上  "+Money(model.state!="Morning"&&model.report!=null?model.report.revenue:0),inverseSmall);Label(1000,43,180,model.state=="Open"?(store.elapsed>=StoreSimulation.DaySeconds?"閉店の片付け":"営業中"):model.state=="Morning"?"開店準備":"閉店",inverseSmall);
         WorldLabels();Footer();if(model.state=="Result")Result(model.report,false);else if(model.state=="Final")Final();else if(panel=="前日の結果"&&history.Count>0)Result(history[history.Count-1],true);else if(panel=="仕入れ")OrderPanel();else if(panel=="価格")PricePanel();else if(panel=="棚配置")LayoutPanel();
     }
 
-    void WorldLabels(){Sign(new Vector3(0,2.45f,4.9f),"ちいさなコンビニ",180);Sign(new Vector3(5.1f,.5f,4.65f),"バックヤード",130);Sign(new Vector3(4.8f,1.45f,-3.85f),"レジ",62);
-        for(int i=0;i<6;i++){var s=store.shelves[i];var at=StoreSimulation.Slots[s.slot]+new Vector3(0,2.05f,0);string name=ShopModel.Products[s.product].name;Sign(at,name+(s.refrigerated?" / 冷蔵":""),s.refrigerated?150:105);if(model.state=="Open"&&s.stock<=Math.Max(2,s.capacity/3)){var p=ScreenPoint(at);GUI.Label(new Rect(p.x-55,p.y+27,110,25),s.stock==0?"空っぽ":"あと少し",small);}}
-        foreach(var c in store.customers)if(c.bubbleUntil>store.elapsed)Sign(c.position+Vector3.up*2.05f,c.bubble,100);
-        if(model.state=="Open"){Sign(store.clerkPosition+Vector3.up*2.25f,store.clerkState,110);if(model.staffCount==2)Sign(store.stockerPosition+Vector3.up*2.25f,store.stockerState,110);}
-        if(Time.unscaledTime<feedbackUntil)Sign(StoreSimulation.Register+Vector3.up*2.3f,feedback,130);
+    void WorldLabels(){
+        var sign=ScreenPoint(new Vector3(0,2.23f,4.90f));GUI.Label(new Rect(sign.x-92,sign.y-14,184,28),"ちいさなコンビニ",inverse);
+        bool clear=panel==""&&(model.state=="Morning"||model.state=="Open");
+        if(clear){for(int i=0;i<6;i++){var shelf=store.shelves[i];var p=ScreenPoint(StoreSimulation.Slots[shelf.slot]+new Vector3(0,.48f,-.66f));GUI.backgroundColor=inspectedShelf==i?new Color(.94f,.63f,.22f):new Color(.94f,.93f,.85f);tagStyle.normal.textColor=Ink;tagStyle.hover.textColor=Ink;tagStyle.active.textColor=Ink;if(GUI.Button(new Rect(p.x-43,p.y,86,23),(i+1)+"  "+ShopModel.Products[shelf.product].name,tagStyle))inspectedShelf=inspectedShelf==i?-1:i;GUI.backgroundColor=Color.white;Box(new Rect(p.x-43,p.y+22,86,1),new Color(.53f,.62f,.53f));}
+            if(inspectedShelf>=0){var s=store.shelves[inspectedShelf];Box(new Rect(866,462,310,150),Cream);Box(new Rect(866,462,4,150),Accent);Label(882,472,235,"棚"+(inspectedShelf+1)+"  "+ShopModel.Products[s.product].name);if(Button(1135,469,30,28,"×"))inspectedShelf=-1;Label(882,508,280,model.state=="Morning"?"容量 "+s.capacity+" / "+(s.refrigerated?"冷蔵棚":"通常棚"):"棚 "+s.stock+" / "+s.capacity+"   倉庫 "+store.warehouse[s.product],small);Label(882,535,280,"販売価格  "+Money(model.SellingPrice(s.product)),small);if(model.state=="Morning"&&Button(882,572,280,28,"配置・商品を変更")){selectedShelf=inspectedShelf;panel="棚配置";}}
+        }
+        foreach(var c in store.customers)if(c.bubbleUntil>store.elapsed)Sign(c.position+Vector3.up*2.05f,c.bubble,94);
+        if(model.state=="Open"){if(store.clerkState=="お会計")Sign(store.clerkPosition+Vector3.up*2.25f,"お会計",82);if(model.staffCount==2&&(store.stockerState=="補充中"||store.stockerState=="品出しへ"))Sign(store.stockerPosition+Vector3.up*2.25f,"品出し",82);}
+        if(Time.unscaledTime<feedbackUntil)Sign(StoreSimulation.Register+Vector3.up*2.3f,feedback,120);
     }
-    void Footer(){Box(new Rect(0,626,1200,94),new Color(1,.99f,.94f));
+    void Footer(){Box(new Rect(0,626,1200,94),Cream);Box(new Rect(0,626,1200,2),new Color(.75f,.81f,.73f));
         if(model.state=="Morning"){Label(26,632,1100,ShopModel.Hints[model.weather]+"  冷蔵棚の電気代 "+Money(store.Electricity())+" / 日",small);if(history.Count>0&&Button(975,631,195,30,"前日の結果"))panel="前日の結果";if(Button(30,671,225,38,"仕入れ"))panel="仕入れ";if(Button(270,671,225,38,"価格"))panel="価格";if(Button(510,671,225,38,"棚配置"))panel="棚配置";if(Button(750,671,420,38,"開店",model.OrderCost()<=model.cash))Open();}
         else if(model.state=="Open"){Label(27,636,785,store.elapsed>=StoreSimulation.DaySeconds?"22:00 新しいお客さんの入店は終了。会計と退店を待っています。":"棚が空いたら店員が品出し。品出し中はレジに列ができます。",small);Label(27,671,530,"店員 "+model.staffCount+"人 / レジ  "+store.clerkState+"   /   レジ待ち "+store.queue.Count+"人",small);for(int i=0;i<3;i++){float rate=i==0?1:i==1?2:4;if(Button(810+i*122,671,110,38,"×"+rate,true,store.speed==rate))store.speed=rate;}}
         else Label(28,651,1100,"店を眺めて、明日の仕入れと棚配置を考えよう。",small);
     }
-    void Modal(string heading,float x,float y,float w,float h){Box(new Rect(0,72,1200,554),new Color(.22f,.32f,.3f,.23f));Box(new Rect(x+7,y+7,w,h),new Color(.3f,.35f,.32f,.3f));Box(new Rect(x,y,w,h),new Color(1,.99f,.94f));Label(x+24,y+16,w-48,heading,title);}
+    void Modal(string heading,float x,float y,float w,float h){Box(new Rect(0,72,1200,554),new Color(.22f,.32f,.3f,.23f));Box(new Rect(x+7,y+7,w,h),new Color(.3f,.35f,.32f,.3f));Box(new Rect(x,y,w,h),Cream);Box(new Rect(x,y,w,5),Accent);Label(x+24,y+16,w-48,heading,title);}
     void OrderPanel(){PreparationPanel(false);}
     void PricePanel(){PreparationPanel(true);}
     void PreparationPanel(bool pricing){
