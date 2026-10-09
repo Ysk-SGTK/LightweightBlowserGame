@@ -66,9 +66,20 @@ Chrome 154.0.8037.93 headless、Windowsの同一PC、viewport1280×860・Canvas1
 ### 残る弱点・未検証
 - 人物は簡易Primitive。棚札と壁の店名は画面投影なので、3Dの実物札・壁面文字の自然さには改善余地がある。忙しい時の吹き出し同士の重なりも残りうる。
 - 狭幅では情報Panelの細かい文字が小さくなる。PC中心の画面であり、実機スマホ向けの操作／読みやすさは未検証。
-- Chrome以外、実機タッチ端末、ネイティブブラウザズーム、画面全体のフルスクリーン／長時間性能、公開環境の表示・通信は未検証。本番API保存・デプロイ検証なし。
+- Chrome以外、実機タッチ端末、ネイティブブラウザズーム、画面全体のフルスクリーン／長時間性能は未検証。公開環境の表示・通信は下記の追加検証で確認済み。
 - 既知の機能回帰は検出していない。公開品質の主観評価・人による長時間プレイ評価は未実施。
 - 途中の修正記録：制限環境のUnityライセンス接続停止→今回起動したPIDだけ停止して通常権限で再実行。比較サーバーの共通src不足による403→ローカル経路を追加。冷蔵上部の遮蔽／床の強い市松模様→画像を見て調整。125%模擬時の横はみ出し→100vwを100%へ修正してPASS。最初の画像はafter-first-pass.pngとして保持。
+
+### 2026-10-09 Git Push・公開確認
+- ユーザーの明示承認により、改善対象9ファイルを `d4f5319b4c0c753dd3a9e664f9e1c9ed62466b73`（Improve Small Konbini storefront visuals and UI）としてmainへコミットし、origin/mainへPush成功。
+- Cloudflare Pages `lightweight-browser-games` の本番デプロイ `fe28fbf9-102e-4425-8cf1-07403bf46701`、Source=d4f5319、Status=Activeを確認してから公開QAを実行。公開URL：https://lightweight-browser-games.pages.dev/small-konbini/ 。
+- 公開前チェック：`npm test` 46/46 PASS、`npm run check` PASS、`npm run deploy:check` PASS（静的配布とFunctionsのコンパイル）。最初のFunctions検証はsandboxのディレクトリ読み取り制限で失敗したため、通常ホスト権限で同じコマンドを再実行しPASS。
+- 公開Chrome 154.0.8037.93でトップページのリンクから `?test=1` を保ったままゲームへ移動し、Canvas入力で7日間を完走。46項目すべてPASS、エラー0件。棚配置・価格・仕入れ・時計・客移動・会計・品出し・2人の並行作業・日次結果・前日比較・翌日・7日間集計・再プレイを確認。今回の実測は販売312個・利益23,990円。天気等の違いがあるため、上記ローカル実測と同一結果を要求していない。
+- 公開表示の追加検査8項目PASS：1024×768／800×600で横はみ出しなし、タッチ入力相当で棚詳細・価格操作正常、125%のCSS zoom模擬で表示・クリック正常。ネイティブブラウザズームと実機タッチの未検証条件は維持。
+- 公開Web.data／Web.wasm／Web.loader.js／style.css／index.htmlのHTTP 200とSHA256が、検証済みローカル配布ファイルと全件一致。公開の営業中画像でも飲料の表示と床・棚札の仕上げを確認。
+- 既存page_viewのHTTP 204を確認。今回生成したIDだけをD1からSELECTし、game_id=small-konbini、event_name=page_view、is_test=1を確認（読取1行・書込0行）。DBマイグレーション、既存ログの変更、認証設定の変更なし。結果カードの送信・共有は今回の検証対象外。
+- 公開証跡：`output/conbini-gfx-001/public/browser-tests-v4.json`、`ui-tests.json`、`assets.json`、`events.json`、同フォルダの各スクリーンショット。再現コマンド：`node output/conbini-gfx-001/verify-public.cjs`、`node output/conbini-gfx-001/verify-public-ui.cjs`、`node output/conbini-gfx-001/verify-public-assets.cjs`、`npx wrangler pages deployment list --project-name lightweight-browser-games --environment production --json`。
+- 無関係なUnity-Game-Lab直下の未追跡実験ファイルは保持し、コミット・Pushの対象外とした。
 
 ---
 
